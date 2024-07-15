@@ -1,0 +1,7 @@
+DEPLOYMENT=PRODUCTION
+HTTPS_ENABLED=false
+PORT=8080
+LOGGER=tiny
+MONGO_URI=mongodb+srv://atkahmed9924:LbBrFKqYiLKMhuya@zeydalcluster.kfoeudp.mongodb.net/Zeydal_Backend_production?retryWrites=true&w=majority&appName=ZeydalCluster
+JWT_SECRET=SKFHDKhfjkdhfskjFJKHFJSDKHF_SJKDFHKJ2H342KJ4H
+END_POINT=https://turkotrend-backend/api
