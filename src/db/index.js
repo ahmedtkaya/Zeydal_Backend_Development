@@ -1,3 +1,4 @@
 import Users from "./users";
+import Products from "./products";
 
-export default [Users];
+export default [Users, Products];
