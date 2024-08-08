@@ -9,16 +9,51 @@ import multer from "multer";
 import path from "path";
 
 // Configure multer for file uploads
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, "public/images");
-  },
-  filename: function (req, file, cb) {
-    cb(null, Date.now() + path.extname(file.originalname));
+// const storage = multer.diskStorage({
+//   destination: function (req, file, cb) {
+//     cb(null, "public/images");
+//   },
+//   filename: function (req, file, cb) {
+//     cb(null, Date.now() + path.extname(file.originalname));
+//   },
+// });
+
+// const upload = multer({ storage: storage });
+
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => {
+      cb(null, "public/images");
+    },
+    filename: (req, file, cb) => {
+      //const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+      const originalName = file.originalname;
+      cb(null, originalName);
+    },
+  }),
+  fileFilter: (req, file, cb) => {
+    // İzin verilen dosya türleri
+    const fileTypes = /jpeg|jpg|png/;
+    // Dosya uzantısı
+    const extname = fileTypes.test(
+      path.extname(file.originalname).toLowerCase()
+    );
+    // MIME türü
+    const mimetype = fileTypes.test(file.mimetype);
+
+    if (mimetype && extname) {
+      return cb(null, true);
+    } else {
+      cb(
+        new ApiError(
+          "Invalid file type. Only JPEG, JPG, and PNG are allowed.",
+          400,
+          "InvalidFileType"
+        )
+      );
+    }
   },
 });
-
-const upload = multer({ storage: storage });
 
 export default (router) => {
   router.post(
@@ -59,16 +94,46 @@ export default (router) => {
     }
   );
 
-  router.get("/get-all-products", Session, async (req, res) => {
+  router.get("/get-all-products", async (req, res) => {
+    // try {
+    //   const getAllProducts = await Products.find();
+    //   if (getAllProducts.length === 0) {
+
+    //   }
+    //   res.status(201).json(getAllProducts);
+    // } catch (error) {
+    //   new ApiError("Products can not get", 401, "CannotGetProducts");
+    // }
     try {
       const getAllProducts = await Products.find();
-      res.status(201).json(getAllProducts);
+
+      if (getAllProducts.length === 0) {
+        throw new ApiError(
+          "There are no products available",
+          404,
+          "noFindProduct"
+        );
+      }
+
+      res.status(200).json(getAllProducts);
     } catch (error) {
-      new ApiError("Products can not get", 401, "CannotGetProducts");
+      // Hata ApiError ise, hata kodunu ve mesajını kullan
+      if (error instanceof ApiError) {
+        res.status(error.status).json({
+          message: error.message,
+          errorCode: error.code,
+        });
+      } else {
+        // Eğer hata ApiError değilse, genel bir hata mesajı döndür
+        res.status(500).json({
+          message: "An unexpected error occurred",
+          errorCode: "InternalServerError",
+        });
+      }
     }
   });
 
-  router.get("/get-products-by-category", Session, async (req, res) => {
+  router.get("/get-products-by-category", async (req, res) => {
     const category = req.query.category;
     if (!category) {
       return res
@@ -95,7 +160,7 @@ export default (router) => {
     }
   });
 
-  router.get("/get-product-by-id/:id", Session, async (req, res) => {
+  router.get("/get-product-by-id/:id", async (req, res) => {
     const { id } = req.params;
 
     try {
@@ -126,7 +191,36 @@ export default (router) => {
         res.status(404).json(`Product with ID ${id} not found`);
       }
     } catch (error) {
-      res.status(500).json({ message: "Cannot delete product", error });
+      res
+        .status(500)
+        .json(
+          new ApiError("Cannot delete product", 401, "cannotDeleteProduct")
+        );
+    }
+  });
+
+  router.get("/get-categories", async (req, res) => {
+    try {
+      const products = await Products.find({});
+      const categories = {};
+
+      products.forEach((product) => {
+        product.categories.forEach((cat) => {
+          if (!categories[cat]) {
+            categories[cat] = [];
+          }
+          categories[cat].push(product);
+        });
+      });
+
+      res.json(categories);
+    } catch (err) {
+      console.error(err);
+      res
+        .status(500)
+        .json(
+          new ApiError("Cannot get categories", 401, "cannotGetCategories")
+        );
     }
   });
 };
