@@ -38,7 +38,8 @@ mongoose
 const app = express();
 const router = express.Router();
 
-app.use(express.static("public"));
+// app.use(express.static("images"));
+app.use("/public", express.static(path.join(__dirname, "public")));
 app.use(logger(process.env.LOGGER));
 app.use(helmet());
 app.use(

@@ -1,24 +1,8 @@
-import Users from "../db/users";
 import ApiError from "../errors/ApiError";
-import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
 import Session from "../middlewares/Session";
-import Role from "../middlewares/RoleMiddleware";
 import Products from "../db/products";
 import multer from "multer";
 import path from "path";
-
-// Configure multer for file uploads
-// const storage = multer.diskStorage({
-//   destination: function (req, file, cb) {
-//     cb(null, "public/images");
-//   },
-//   filename: function (req, file, cb) {
-//     cb(null, Date.now() + path.extname(file.originalname));
-//   },
-// });
-
-// const upload = multer({ storage: storage });
 
 const upload = multer({
   storage: multer.diskStorage({
@@ -95,15 +79,6 @@ export default (router) => {
   );
 
   router.get("/get-all-products", async (req, res) => {
-    // try {
-    //   const getAllProducts = await Products.find();
-    //   if (getAllProducts.length === 0) {
-
-    //   }
-    //   res.status(201).json(getAllProducts);
-    // } catch (error) {
-    //   new ApiError("Products can not get", 401, "CannotGetProducts");
-    // }
     try {
       const getAllProducts = await Products.find();
 
