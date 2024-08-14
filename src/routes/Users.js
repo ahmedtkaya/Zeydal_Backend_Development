@@ -3,6 +3,7 @@ import ApiError from "../errors/ApiError";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import getUserIp from "../middlewares/getUserIP";
+import Session from "../middlewares/Session";
 import sendVerificationEmail from "../middlewares/VerificationEmail"; //silinebilir çalışmazsa
 
 export default (router) => {
@@ -143,6 +144,33 @@ export default (router) => {
         "Incorrect Password or email",
         401,
         "userOrPasswordIncorrect"
+      );
+    }
+  });
+
+  router.put("/user/update", Session, async (req, res) => {
+    const { phoneNumber, address, city } = req.body;
+    const user = req.user;
+
+    try {
+      const updateUser = await Users.findByIdAndUpdate(
+        user,
+        { phoneNumber, address, city },
+        { new: true }
+      );
+
+      if (!updateUser) {
+        throw new ApiError("User not found", 400, "notFoundUser");
+      }
+      return res
+        .status(200)
+        .json({ message: "user information has been changed", user });
+    } catch (error) {
+      console.log(error);
+      throw new ApiError(
+        "User informations cannot change",
+        500,
+        "cannotChangeUserInformation"
       );
     }
   });
