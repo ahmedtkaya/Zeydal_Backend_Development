@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Ödeme yap</title>
+    <meta charset="UTF-8" />
+    <script type="text/javascript">
+      if (typeof iyziInit == "undefined") {
+        var iyziInit = {
+          currency: "TRY",
+          token: "95d5573e-da27-4aa9-8c87-0d5a48f84fa8",
+          price: 3399.98,
+          pwiPrice: 3399.98,
+          locale: "tr",
+          baseUrl: "https://sandbox-api.iyzipay.com",
+          merchantGatewayBaseUrl: "https://sandbox-merchantgw.iyzipay.com",
+          registerCardEnabled: true,
+          bkmEnabled: true,
+          bankTransferEnabled: false,
+          bankTransferTimeLimit: { value: 5, type: "day" },
+          bankTransferRedirectUrl:
+            "https://localhost:3000/api/checkout/complete/payment",
+          bankTransferCustomUIProps: {},
+          campaignEnabled: false,
+          campaignMarketingUiDisplay: null,
+          paymentSourceName: "",
+          plusInstallmentResponseList: null,
+          payWithIyzicoSingleTab: false,
+          payWithIyzicoSingleTabV2: false,
+          payWithIyzicoOneTab: false,
+          newDesignEnabled: false,
+          mixPaymentEnabled: true,
+          creditCardEnabled: true,
+          bankTransferAccounts: [],
+          userCards: [
+            {
+              token: "k2pNK4ht8NiagbXBpjbwrJp4XHs=",
+              bin: "49874900",
+              family: "Cardfinans DC",
+            },
+          ],
+          fundEnabled: true,
+          memberCheckoutOtpData: {},
+          force3Ds: false,
+          isSandbox: true,
+          storeNewCardEnabled: true,
+          paymentWithNewCardEnabled: true,
+          enabledApmTypes: ["SOFORT", "IDEAL", "QIWI", "GIROPAY"],
+          payWithIyzicoUsed: false,
+          payWithIyzicoEnabled: true,
+          payWithIyzicoCustomUI: {},
+          buyerName: "ahmed",
+          buyerSurname: "kaya",
+          merchantInfo: "",
+          merchantName: "Sandbox Merchant Name - 3396949",
+          cancelUrl: "",
+          buyerProtectionEnabled: false,
+          hide3DS: false,
+          gsmNumber: "+905349466040",
+          email: "atkaya03@gmail.com",
+          checkConsumerDetail: {},
+          subscriptionPaymentEnabled: false,
+          disabledCardStorageInfoCheckbox: false,
+          ucsEnabled: false,
+          fingerprintEnabled: false,
+          payWithIyzicoFirstTab: false,
+          creditEnabled: false,
+          payWithIyzicoLead: false,
+          goBackUrl: "",
+          metadata: {},
+          createTag: function () {
+            var iyziJSTag = document.createElement("script");
+            iyziJSTag.setAttribute(
+              "src",
+              "https://sandbox-static.iyzipay.com/checkoutform/v2/bundle.js?v=1724060572880"
+            );
+            document.head.appendChild(iyziJSTag);
+          },
+        };
+        iyziInit.createTag();
+      }
+    </script>
+  </head>
+</html>

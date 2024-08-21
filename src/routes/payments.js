@@ -8,93 +8,110 @@ import * as Payments from "../services/iyzico/methods/payments";
 import * as Cards from "../services/iyzico/methods/cards";
 import id from "../utils/uuid";
 import { CompletePayment } from "../utils/payments";
+import OrderCompleteMail from "../middlewares/OrderCompleteMail";
 
 export default (router) => {
   //yeni bir kartla ödeme oluştur ve kartı kaydetme
-  router.post("/payments/:cartId/with-new-card", Session, async (req, res) => {
-    const { card } = req.body;
-    if (!card) {
-      throw new ApiError("Card is required", 400, "cardRequired");
-    }
-    if (!req.params?.cartId) {
-      throw new ApiError("CartID is required", 400, "cartIdRequired");
-    }
-    const cart = await Carts.findOne({ _id: req.params?.cartId })
-      .populate("buyer")
-      .populate("products");
-    if (!cart) {
-      throw new ApiError("Card not found", 404, "cardNotFound");
-    }
-    if (cart?.completed) {
-      throw new ApiError("Cart is completed", 400, "cartCompleted");
-    }
+  router.post(
+    "/payments/:cartId/with-new-card",
+    Session,
+    async (req, res, next) => {
+      const { card } = req.body;
+      if (!card) {
+        throw new ApiError("Card is required", 400, "cardRequired");
+      }
+      if (!req.params?.cartId) {
+        throw new ApiError("CartID is required", 400, "cartIdRequired");
+      }
+      const cart = await Carts.findOne({ _id: req.params?.cartId })
+        .populate("buyer")
+        .populate("products");
+      if (!cart) {
+        throw new ApiError("Card not found", 404, "cardNotFound");
+      }
+      if (cart?.completed) {
+        throw new ApiError("Cart is completed", 400, "cartCompleted");
+      }
 
-    card.registerCard = "0"; //methodslarda registerCard:1 yani kartı kaydet demek ama şuan kaydetme dediğim için 0 yaptım
+      card.registerCard = "0"; //methodslarda registerCard:1 yani kartı kaydet demek ama şuan kaydetme dediğim için 0 yaptım
 
-    const paidPrice = cart.products
-      .map((product) => product.price)
-      .reduce((a, b) => a + b, 0); //ödenecek miktarların toplamı
+      const paidPrice = cart.products
+        .map((product) => product.price)
+        .reduce((a, b) => a + b, 0); //ödenecek miktarların toplamı
 
-    const data = {
-      locale: req.user.locale,
-      conversationId: id(),
-      price: paidPrice,
-      paidPrice: paidPrice,
-      currency: Iyzipay.CURRENCY.TRY,
-      installments: "1",
-      basketId: String(cart?._id),
-      paymentChannel: Iyzipay.PAYMENT_CHANNEL.WEB,
-      paymentGroup: Iyzipay.PAYMENT_GROUP.PRODUCT,
-      paymentCard: card,
-      buyer: {
-        id: String(req.user._id),
-        name: req.user?.name,
-        surname: req.user?.surname,
-        gsmNumber: req.user?.phoneNumber,
-        email: req.user?.email,
-        identityNumber: req.user?.identityNumber,
-        lastLoginDate: moment(req.user?.updatedAt).format(
-          "YYYY-MM-DD HH:mm:ss"
-        ), //iyizpay tarih formatına çevirmek için yapıldı
-        registrationDate: moment(req.user?.updatedAt).format(
-          "YYYY-MM-DD HH:mm:ss"
-        ),
-        registrationAddress: req.user?.address,
-        ip: req.user?.ip,
-        city: req.user?.city,
-        country: req.user?.country,
-        zipCode: req.user?.zipCode,
-      },
-      shippingAddress: {
-        contactName: req.user?.name + "" + req.user?.surname,
-        city: req.user?.city,
-        country: req.user?.country,
-        address: req.user?.address,
-        zipCode: req.user?.zipCode,
-      },
-      billingAddress: {
-        contactName: req.user?.name + "" + req.user?.surname,
-        city: req.user?.city,
-        country: req.user?.country,
-        address: req.user?.address,
-        zipCode: req.user?.zipCode,
-      },
-      basketItems: cart.products.map((product, index) => {
-        return {
-          id: String(product?._id),
-          name: product?.name,
-          category1: product.categories[0],
-          category2: product.categories[1],
-          itemType: Iyzipay.BASKET_ITEM_TYPE[product?.itemType],
-          price: product?.price,
-        };
-      }),
-    };
+      const data = {
+        locale: req.user.locale,
+        conversationId: id(),
+        price: paidPrice,
+        paidPrice: paidPrice,
+        currency: Iyzipay.CURRENCY.TRY,
+        installments: "1",
+        basketId: String(cart?._id),
+        paymentChannel: Iyzipay.PAYMENT_CHANNEL.WEB,
+        paymentGroup: Iyzipay.PAYMENT_GROUP.PRODUCT,
+        paymentCard: card,
+        buyer: {
+          id: String(req.user._id),
+          name: req.user?.name,
+          surname: req.user?.surname,
+          gsmNumber: req.user?.phoneNumber,
+          email: req.user?.email,
+          identityNumber: req.user?.identityNumber,
+          lastLoginDate: moment(req.user?.updatedAt).format(
+            "YYYY-MM-DD HH:mm:ss"
+          ), //iyizpay tarih formatına çevirmek için yapıldı
+          registrationDate: moment(req.user?.updatedAt).format(
+            "YYYY-MM-DD HH:mm:ss"
+          ),
+          registrationAddress: req.user?.address,
+          ip: req.user?.ip,
+          city: req.user?.city,
+          country: req.user?.country,
+          zipCode: req.user?.zipCode,
+        },
+        shippingAddress: {
+          contactName: req.user?.name + "" + req.user?.surname,
+          city: req.user?.city,
+          country: req.user?.country,
+          address: req.user?.address,
+          zipCode: req.user?.zipCode,
+        },
+        billingAddress: {
+          contactName: req.user?.name + "" + req.user?.surname,
+          city: req.user?.city,
+          country: req.user?.country,
+          address: req.user?.address,
+          zipCode: req.user?.zipCode,
+        },
+        basketItems: cart.products.map((product, index) => {
+          return {
+            id: String(product?._id),
+            name: product?.name,
+            category1: product.categories[0],
+            category2: product.categories[1],
+            itemType: Iyzipay.BASKET_ITEM_TYPE[product?.itemType],
+            price: product?.price,
+          };
+        }),
+      };
 
-    let result = await Payments.createPayment(data);
-    await CompletePayment(result);
-    res.json(result);
-  });
+      try {
+        let result = await Payments.createPayment(data);
+        await CompletePayment(result);
+        res.json(result);
+
+        next();
+      } catch (error) {
+        next(error);
+      }
+    },
+    OrderCompleteMail,
+    (req, res) => {
+      return res
+        .status(200)
+        .json(`${req.user.email} mail adresine sipariş detayı gönderilmiştir.`);
+    }
+  );
 
   //yeni bir ödeme oluştur ve kart kaydet
   router.post(
@@ -198,7 +215,7 @@ export default (router) => {
   router.post(
     "/payments/:cartId/:cardIndex/with-registered-card-index",
     Session,
-    async (req, res) => {
+    async (req, res, next) => {
       let { cardIndex } = req.params;
       if (!cardIndex) {
         throw new ApiError("Card index is required", 400, "cardIndexRequired");
@@ -299,9 +316,21 @@ export default (router) => {
         }),
       };
 
-      let result = await Payments.createPayment(data);
-      await CompletePayment(result);
-      res.json(result);
+      try {
+        let result = await Payments.createPayment(data);
+        await CompletePayment(result);
+        res.json(result);
+
+        next();
+      } catch (error) {
+        next(error);
+      }
+    },
+    OrderCompleteMail,
+    (req, res) => {
+      return res
+        .status(200)
+        .json(`${req.user.email} mail adresine sipariş detayı gönderilmiştir.`);
     }
   );
 

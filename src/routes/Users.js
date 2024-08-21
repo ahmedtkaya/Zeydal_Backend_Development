@@ -3,7 +3,7 @@ import ApiError from "../errors/ApiError";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import getUserIp from "../middlewares/getUserIP";
-import sendVerificationEmail from "../middlewares/VerificationEmail"; //silinebilir çalışmazsa
+import sendVerificationEmail from "../middlewares/VerificationEmail";
 
 export default (router) => {
   router.post(

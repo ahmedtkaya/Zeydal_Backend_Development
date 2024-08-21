@@ -1,5 +1,5 @@
 module.exports = {
   apiKey: "sandbox-bkqCdxvCL1VB4bIisfgw9jIjhGHnanvp",
-  secretKey: "sandbox-cYCcsyTLYHxCN92Qqw24QbKRxXuJnXUa",
+  secretKey: "7dvI95bSaaTgGKKolbDaOclal0iItwKg",
   uri: "https://sandbox-api.iyzipay.com",
 };
