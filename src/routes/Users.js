@@ -129,8 +129,8 @@ export default (router) => {
       );
     }
     const passwordConfirmed = await bcrypt.compare(password, user.password);
-    // console.log("kullanıcı girdisi:", password); silinecekler
-    // console.log("hashlenmiş hali:", user.password);
+    console.log("kullanıcı girdisi:", password);
+    console.log("hashlenmiş hali:", user.password);
 
     if (passwordConfirmed) {
       const userJson = user.toJSON();
@@ -153,6 +153,20 @@ export default (router) => {
     const user = req.user;
 
     try {
+      if (phoneNumber) {
+        const existingUser = await Users.findOne({ phoneNumber });
+        if (
+          existingUser &&
+          existingUser._id.toString() !== user._id.toString()
+        ) {
+          throw new ApiError(
+            "This phone number already using",
+            400,
+            "phoneNumberAlreadyUsing"
+          );
+        }
+      }
+
       const updateUser = await Users.findByIdAndUpdate(
         user,
         { phoneNumber, address, city },
@@ -172,6 +186,64 @@ export default (router) => {
         500,
         "cannotChangeUserInformation"
       );
+    }
+  });
+
+  router.put("/user/change-password", Session, async (req, res) => {
+    const { oldPassword, newPassword, confirmPassword } = req.body;
+    const user = req.user;
+    try {
+      const existingUser = await Users.findById(user._id);
+      if (!existingUser) {
+        throw new ApiError("User Not Found", 404, "notFoundUser");
+      }
+
+      const isMatchPassword = await bcrypt.compare(
+        oldPassword,
+        existingUser.password
+      );
+      if (!isMatchPassword) {
+        throw new ApiError(
+          "Incorrect old password",
+          404,
+          "incorrectOldPassword"
+        );
+      }
+
+      if (newPassword !== confirmPassword) {
+        throw new ApiError(
+          "New password and confirm password do not match",
+          404,
+          "passwordsDoNotMatch"
+        );
+      }
+
+      const isSamePassword = await bcrypt.compare(
+        newPassword,
+        existingUser.password
+      );
+      if (isSamePassword) {
+        throw new ApiError(
+          "New Password cannot be the same as the old password",
+          400,
+          "sameAsOldPassword"
+        );
+      }
+
+      existingUser.password = newPassword;
+      await existingUser.save();
+      console.log("Old Password (unhashed):", oldPassword);
+      console.log("New Password (unhashed):", newPassword);
+
+      return res
+        .status(200)
+        .json({ message: "Password has been changed successfully", user });
+    } catch (error) {
+      console.log(error);
+      res.status(error.statusCode || 500).json({
+        message: error.message || "Password change failed",
+        code: error.code || "passwordChangeFailed",
+      });
     }
   });
 };
