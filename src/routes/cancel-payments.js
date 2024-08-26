@@ -11,7 +11,6 @@ const { ObjectId } = Types;
 const reasonEnum = ["double_payment", "buyer_request", "fraud", "other"];
 
 export default (router) => {
-  //Cancel All Payment
   //bu işlemi ya kaldır ya da 24 saat sınırı koy
   router.post(
     "/payments/:paymentSuccessId/cancel",
@@ -43,6 +42,20 @@ export default (router) => {
         const payment = await PaymentSuccess.findOne({
           _id: new ObjectId(paymentSuccessId),
         });
+
+        const now = new Date();
+        const paymentDate = new Date(payment.createdAt);
+        const timeDifference = now - paymentDate;
+
+        // 24 saat 86400000 milisaniyeye denk gelir
+        if (timeDifference > 86400000) {
+          throw new ApiError(
+            "This payment can no longer be canceled as the 24-hour window has passed",
+            400,
+            "cancelTimeExceeded"
+          );
+        }
+
         const result = await CancelPayments.cancelPayment({
           locale: req.user.locale,
           conversationId: id(),
