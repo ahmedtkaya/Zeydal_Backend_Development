@@ -4,6 +4,7 @@ import Session from "../middlewares/Session";
 import * as CancelPayments from "../services/iyzico/methods/cancel_payments";
 import id from "../utils/uuid";
 import PaymentSuccess from "../db/payment-success";
+import Products from "../db/products";
 import sendCanceledOrderMail from "../middlewares/OrderCanceledMail";
 
 const { ObjectId } = Types;
@@ -63,6 +64,28 @@ export default (router) => {
           ip: req.user?.ip,
           ...reasonObj,
         });
+
+        const productStockUpdates = {};
+
+        // Sepetteki ürünleri döngüyle işleyerek aynı ürünlerden kaç tane olduğunu hesapla
+        for (const paymentProduct of payment.itemTransactions) {
+          const productId = String(paymentProduct.itemId);
+          if (productStockUpdates[productId]) {
+            productStockUpdates[productId]++;
+          } else {
+            productStockUpdates[productId] = 1;
+          }
+        }
+
+        // Stokları artır
+        for (const productId in productStockUpdates) {
+          const quantityToIncrease = productStockUpdates[productId];
+          await Products.updateOne(
+            { _id: productId },
+            { $inc: { stock: quantityToIncrease } } // Stokları artırmak için
+          );
+        }
+
         res.json(result);
       } catch (error) {
         next(error);

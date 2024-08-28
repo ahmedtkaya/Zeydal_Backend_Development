@@ -2,6 +2,7 @@ import moment from "moment";
 import Iyzipay from "iyzipay";
 import Carts from "../db/cart";
 import Users from "../db/users";
+import Products from "../db/products";
 import ApiError from "../errors/ApiError";
 import Session from "../middlewares/Session";
 import * as Payments from "../services/iyzico/methods/payments";
@@ -98,6 +99,27 @@ export default (router) => {
       try {
         let result = await Payments.createPayment(data);
         await CompletePayment(result);
+        // Ürün stoklarını güncelleme
+        const productStockUpdates = {};
+
+        // Sepetteki ürünleri döngüyle işleyerek aynı ürünlerden kaç tane olduğunu hesapla
+        for (const cartProduct of cart.products) {
+          const productId = String(cartProduct._id);
+          if (productStockUpdates[productId]) {
+            productStockUpdates[productId]++;
+          } else {
+            productStockUpdates[productId] = 1;
+          }
+        }
+
+        // Stokları güncelle
+        for (const productId in productStockUpdates) {
+          const quantityToDecrease = productStockUpdates[productId];
+          await Products.updateOne(
+            { _id: productId },
+            { $inc: { stock: -quantityToDecrease } }
+          );
+        }
         res.json(result);
 
         next();
@@ -319,6 +341,28 @@ export default (router) => {
       try {
         let result = await Payments.createPayment(data);
         await CompletePayment(result);
+
+        // Ürün stoklarını güncelleme
+        const productStockUpdates = {};
+
+        // Sepetteki ürünleri döngüyle işleyerek aynı ürünlerden kaç tane olduğunu hesapla
+        for (const cartProduct of cart.products) {
+          const productId = String(cartProduct._id);
+          if (productStockUpdates[productId]) {
+            productStockUpdates[productId]++;
+          } else {
+            productStockUpdates[productId] = 1;
+          }
+        }
+
+        // Stokları güncelle
+        for (const productId in productStockUpdates) {
+          const quantityToDecrease = productStockUpdates[productId];
+          await Products.updateOne(
+            { _id: productId },
+            { $inc: { stock: -quantityToDecrease } }
+          );
+        }
         res.json(result);
 
         next();
