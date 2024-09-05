@@ -21,13 +21,13 @@ const sendVerificationEmail = async (req, res, next) => {
   const transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
-      user: "atkahmed9924@gmail.com", //yandex mail yazılacak
-      pass: "pwyh yojo pdaw welz", // gmail uygulama şifresi bölümünden alındı
+      user: process.env.MAIL_SENDER, //yandex mail yazılacak
+      pass: process.env.MAIL_SENDER_PASSWORD, // gmail uygulama şifresi bölümünden alındı
     },
   });
 
   const mailOptions = {
-    from: "atkahmed9924@gmail.com",
+    from: process.env.MAIL_SENDER,
     to: email,
     subject: "Email Verification",
     html: `<p>Please verify your email by clicking the link below:</p>
