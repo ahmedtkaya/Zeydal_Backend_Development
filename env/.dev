@@ -5,3 +5,5 @@ LOGGER=dev
 MONGO_URI=mongodb+srv://atkahmed9924:LbBrFKqYiLKMhuya@zeydalcluster.kfoeudp.mongodb.net/Zeydal_Backend_development?retryWrites=true&w=majority&appName=ZeydalCluster
 JWT_SECRET=SFHSDFS87FS8SKJDFH_JK2H42HH6H5KJ6KJSHF786SD6F8SF6SH
 END_POINT=https://localhost:3000/api
+MAIL_SENDER=atkahmed9924@gmail.com
+MAIL_SENDER_PASSWORD=pwyh yojo pdaw welz

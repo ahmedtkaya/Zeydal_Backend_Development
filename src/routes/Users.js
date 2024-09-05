@@ -5,6 +5,7 @@ import jwt from "jsonwebtoken";
 import getUserIp from "../middlewares/getUserIP";
 import Session from "../middlewares/Session";
 import sendVerificationEmail from "../middlewares/VerificationEmail";
+import forgotPasswordEmail from "../middlewares/ForgotPasswordMail";
 
 export default (router) => {
   router.post(
@@ -69,7 +70,6 @@ export default (router) => {
     }
   );
 
-  //silinebilir çalışmazsa
   router.get("/verify-email/", async (req, res) => {
     const { token } = req.query;
 
@@ -245,5 +245,16 @@ export default (router) => {
         code: error.code || "passwordChangeFailed",
       });
     }
+  });
+
+  router.post("/forgot-password", forgotPasswordEmail, async (req, res) => {
+    const { email } = req.body;
+
+    const userEmail = await Users.findOne({ email });
+    if (!userEmail) {
+      console.log(userEmail);
+      throw new ApiError("This email does not exist", 400, "doesNotExistEmail");
+    }
+    res.status(200).send("Link has been send");
   });
 };

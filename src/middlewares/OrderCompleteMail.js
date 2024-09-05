@@ -21,8 +21,8 @@ const sendCompletedOrderEmail = async (req, res, next) => {
   const transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
-      user: "atkahmed9924@gmail.com", //yandex mail yazılacak
-      pass: "pwyh yojo pdaw welz", // gmail uygulama şifresi bölümünden alındı
+      user: process.env.MAIL_SENDER, //yandex mail yazılacak
+      pass: process.env.MAIL_SENDER_PASSWORD, // gmail uygulama şifresi bölümünden alındı
     },
   });
   console.log(cart.products); // Tüm ürünlerin bu array içinde olup olmadığını kontrol edin
@@ -48,7 +48,7 @@ const sendCompletedOrderEmail = async (req, res, next) => {
   );
 
   const mailOptions = {
-    from: "atkahmed9924@gmail.com",
+    from: process.env.MAIL_SENDER,
     to: email,
     subject: "Siparişiniz alındı",
     html: `
