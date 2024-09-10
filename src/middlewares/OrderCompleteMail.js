@@ -25,13 +25,16 @@ const sendCompletedOrderEmail = async (req, res, next) => {
       pass: process.env.MAIL_SENDER_PASSWORD, // gmail uygulama şifresi bölümünden alındı
     },
   });
+
   console.log(cart.products); // Tüm ürünlerin bu array içinde olup olmadığını kontrol edin
+  console.log("mail", process.env.MAIL_SENDER);
+  console.log("password", process.env.MAIL_SENDER_PASSWORD);
 
   const productsList = cart.products
     .map(
       (product) => `
       <div style="margin-bottom: 20px;">
-      <img src="${product.images}" alt="${product.name}" style="max-width: 200px; height: auto;" />
+      <img src="https://localhost:3000/public/images/${product.images[0]}" alt="${product.name}" style="max-width: 200px; height: auto;" />
       <p>Ürün Adı: ${product.name}</p>
       <p>Ürün Markası: ${product.brand}</p>
       <p>Ürün Fiyatı: ${product.price}</p>

@@ -10,19 +10,17 @@ const upload = multer({
       cb(null, "public/images");
     },
     filename: (req, file, cb) => {
-      //const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
       const originalName = file.originalname;
       cb(null, originalName);
     },
   }),
   fileFilter: (req, file, cb) => {
-    // İzin verilen dosya türleri
     const fileTypes = /jpeg|jpg|png/;
-    // Dosya uzantısı
+
     const extname = fileTypes.test(
       path.extname(file.originalname).toLowerCase()
     );
-    // MIME türü
+
     const mimetype = fileTypes.test(file.mimetype);
 
     if (mimetype && extname) {
@@ -47,7 +45,6 @@ export default (router) => {
     async (req, res, next) => {
       try {
         if (req.user.role !== "admin") {
-          //user role admin değilse burası değilde ekleme esnasındaki hata veriyor, buna bir bakalım(kod sorunsuz çalışıyor)
           throw new ApiError(
             "Forbidden: Insufficient permissions",
             403,
@@ -198,4 +195,53 @@ export default (router) => {
         );
     }
   });
+
+  router.put(
+    "/update-product/:id",
+    Session,
+    upload.array("images", 10),
+    async (req, res, next) => {
+      // if (req.user.role !== "admin") {
+      //   throw new ApiError(
+      //     "Forbidden: Insufficient permissions",
+      //     403,
+      //     "InsufficientPermissions"
+      //   );
+      // }
+      try {
+        const productId = req.params.id;
+        const { name, categories, brand, definition, price, stock } = req.body;
+        const imagePaths = req.files.map((file) => file.path);
+
+        const product = await Products.findById(productId);
+
+        if (!product) {
+          throw new ApiError("Product not found", 404, "ProductNotFound");
+        }
+
+        if (name) product.name = name;
+        if (categories) product.categories = categories;
+        if (brand) product.brand = brand;
+        if (definition) product.definition = definition;
+        if (price) product.price = price;
+        if (stock) product.stock = stock;
+
+        if (req.files.length > 0) {
+          product.images = imagePaths;
+        }
+
+        await product.save();
+
+        res.status(200).json(product);
+      } catch (error) {
+        next(
+          new ApiError(
+            "Product could not be updated",
+            400,
+            "DoesNotUpdatedProduct"
+          )
+        );
+      }
+    }
+  );
 };
