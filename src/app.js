@@ -17,6 +17,7 @@ import Session from "./middlewares/Session";
 import routes from "./routes/index";
 import DBModels from "./db/index";
 import Users from "./db/users";
+import Seller from "./db/seller";
 
 const envPath = config?.production ? "./env/.prod" : "./env/.dev";
 dotenv.config({
@@ -75,24 +76,76 @@ const jwtOps = {
 passport.use(
   new JwtStrategy(jwtOps, async (jwtPayload, done) => {
     try {
+      // Önce Users modelinde arama yap
       const user = await Users.findOne({ _id: jwtPayload._id });
+
       if (user) {
-        done(null, user.toJSON());
-      } else {
-        done(
-          new ApiError(
-            "Authorization is not valid",
-            401,
-            "authorizationInvalid"
-          ),
-          false
-        );
+        // Eğer kullanıcı bulunursa, kullanıcıyı geri döndür
+        return done(null, user.toJSON());
       }
+
+      // Eğer Users modelinde bulunmazsa Seller modelinde arama yap
+      const seller = await Seller.findOne({ _id: jwtPayload._id });
+
+      if (seller) {
+        // Eğer satıcı bulunursa, satıcıyı geri döndür
+        return done(null, seller.toJSON());
+      }
+
+      // Eğer hem kullanıcı hem de satıcı bulunmazsa hata döndür
+      return done(
+        new ApiError("Authorization is not valid", 401, "authorizationInvalid"),
+        false
+      );
     } catch (err) {
+      // Hata durumunda error ve false döndür
       return done(err, false);
     }
   })
 );
+
+// passport.use(
+//   new JwtStrategy(jwtOps, async (jwtPayload, done) => {
+//     try {
+//       const user = await Users.findOne({ _id: jwtPayload._id });
+//       if (user) {
+//         done(null, user.toJSON());
+//       } else {
+//         done(
+//           new ApiError(
+//             "Authorization is not valid",
+//             401,
+//             "authorizationInvalid"
+//           ),
+//           false
+//         );
+//       }
+//     } catch (err) {
+//       return done(err, false);
+//     }
+//   })
+// );
+// passport.use(
+//   new JwtStrategy(jwtOps, async (jwtPayload, done) => {
+//     try {
+//       const seller = await Seller.findOne({ _id: jwtPayload._id });
+//       if (seller) {
+//         done(null, seller.toJSON());
+//       } else {
+//         done(
+//           new ApiError(
+//             "Authorization is not valid",
+//             401,
+//             "authorizationInvalid"
+//           ),
+//           false
+//         );
+//       }
+//     } catch (err) {
+//       return done(err, false);
+//     }
+//   })
+// );
 routes.forEach((routeFunc, index) => {
   routeFunc(router);
 });

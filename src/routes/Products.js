@@ -43,23 +43,24 @@ export default (router) => {
     Session,
     upload.array("images", 10),
     async (req, res, next) => {
+      if (req.user.role !== "admin" && req.user.role !== "seller") {
+        //req.seller.role ?
+        throw new ApiError(
+          "Forbidden: Insufficient permissions",
+          403,
+          "InsufficientPermissions"
+        );
+      }
       try {
-        if (req.user.role !== "admin") {
-          throw new ApiError(
-            "Forbidden: Insufficient permissions",
-            403,
-            "InsufficientPermissions"
-          );
-        }
-
-        const { name, categories, brand, definition, price, stock } = req.body;
+        const { name, categories, definition, price, stock } = req.body;
         const imagePaths = req.files.map((file) => file.path);
+        const sellerId = req.user._id;
 
         const product = new Products({
           name,
           images: imagePaths,
           categories,
-          brand,
+          seller: sellerId,
           definition,
           price,
           stock,
@@ -68,6 +69,7 @@ export default (router) => {
         await product.save();
         res.status(201).json(product);
       } catch (error) {
+        console.log(error);
         next(
           new ApiError("Product could not be added", 401, "DoesNotAddedProduct")
         );
@@ -77,7 +79,7 @@ export default (router) => {
 
   router.get("/get-all-products", async (req, res) => {
     try {
-      const getAllProducts = await Products.find();
+      const getAllProducts = await Products.find().populate("seller");
 
       if (getAllProducts.length === 0) {
         throw new ApiError(
@@ -116,7 +118,7 @@ export default (router) => {
     try {
       const products = await Products.find({
         categories: category,
-      });
+      }).populate("seller");
       res.status(200).json(products);
     } catch (error) {
       console.error(error);
@@ -136,7 +138,7 @@ export default (router) => {
     const { id } = req.params;
 
     try {
-      const product = await Products.findById(id);
+      const product = await Products.findById(id).populate("seller");
       if (!product) {
         return res
           .status(404)
@@ -156,6 +158,18 @@ export default (router) => {
   router.delete("/delete-product/:id", Session, async (req, res) => {
     const id = req.params.id;
     try {
+      const sellerProduct = await Products.findById(id);
+
+      if (
+        req.user.role === "seller" &&
+        sellerProduct.seller.toString() !== req.user._id.toString()
+      ) {
+        throw new ApiError(
+          "Forbidden: You are not authorized to delete this product",
+          403,
+          "unauthorizedProductDelete"
+        );
+      }
       const product = await Products.findOneAndDelete({ _id: id });
       if (product) {
         res.status(200).json(`Product number ${id} was deleted`);
@@ -163,6 +177,7 @@ export default (router) => {
         res.status(404).json(`Product with ID ${id} not found`);
       }
     } catch (error) {
+      console.log(error);
       res
         .status(500)
         .json(
@@ -201,13 +216,13 @@ export default (router) => {
     Session,
     upload.array("images", 10),
     async (req, res, next) => {
-      // if (req.user.role !== "admin") {
-      //   throw new ApiError(
-      //     "Forbidden: Insufficient permissions",
-      //     403,
-      //     "InsufficientPermissions"
-      //   );
-      // }
+      if (req.user.role !== "admin" && req.user.role !== "seller") {
+        throw new ApiError(
+          "Forbidden: Insufficient permissions",
+          403,
+          "InsufficientPermissions"
+        );
+      }
       try {
         const productId = req.params.id;
         const { name, categories, brand, definition, price, stock } = req.body;
@@ -217,6 +232,17 @@ export default (router) => {
 
         if (!product) {
           throw new ApiError("Product not found", 404, "ProductNotFound");
+        }
+
+        if (
+          req.user.role === "seller" &&
+          product.seller.toString() !== req.user._id.toString()
+        ) {
+          throw new ApiError(
+            "Forbidden: You are not authorized to update this product",
+            403,
+            "unauthorizedProductUpdate"
+          );
         }
 
         if (name) product.name = name;
@@ -234,6 +260,7 @@ export default (router) => {
 
         res.status(200).json(product);
       } catch (error) {
+        console.log(error);
         next(
           new ApiError(
             "Product could not be updated",

@@ -7,6 +7,8 @@ import CancelPayments from "./cancel-payments";
 import Checkouts from "./checkouts";
 import Installments from "./installments";
 import RefundPayments from "./refund-payments";
+import Seller from "./Sellers";
+import admin from "./admin";
 export default [
   users,
   Products,
@@ -17,4 +19,6 @@ export default [
   Checkouts,
   Installments,
   RefundPayments,
+  Seller,
+  admin,
 ];
