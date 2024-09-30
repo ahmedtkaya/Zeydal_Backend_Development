@@ -23,11 +23,29 @@ const CartsSchema = new Schema(
       ref: "Users",
       required: true,
     },
-    products: {
-      type: [ObjectId],
-      ref: "Products",
-      required: true,
-    },
+    products: [
+      {
+        productId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Products",
+          required: true,
+        },
+        seller: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Sellers",
+          required: true,
+        }, // Ürünün sahibi olan satıcı
+        quantity: {
+          type: Number,
+          required: true,
+        },
+        status: {
+          type: String,
+          enum: ["pending", "processing", "completed"], // Ürün durumları
+          default: "pending",
+        },
+      },
+    ],
     currency: {
       type: String,
       required: true,

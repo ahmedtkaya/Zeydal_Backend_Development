@@ -28,8 +28,9 @@ const ProductsSchema = new Schema(
     categories: {
       type: [String],
     },
-    brand: {
-      type: String,
+    seller: {
+      type: ObjectId,
+      ref: "Sellers",
       required: true,
     },
     price: {
