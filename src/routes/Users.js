@@ -1,4 +1,6 @@
 import Users from "../db/users";
+import Cart from "../db/cart";
+import PaymentSuccess from "../db/payment-success";
 import ApiError from "../errors/ApiError";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
@@ -257,4 +259,79 @@ export default (router) => {
     }
     res.status(200).send("Link has been send");
   });
+
+  router.get("/user/orders/:cartId", Session, async (req, res) => {
+    const { cartId } = req.params;
+    const userId = req.user._id;
+    try {
+      const userOrders = await Cart.findOne({
+        _id: cartId,
+        completed: true,
+        buyer: userId,
+      })
+        .populate("products.productId", "name price images categories")
+        .populate("products.seller", "SellerName");
+      if (!userOrders) {
+        throw new ApiError(
+          "Cart not found or not completed",
+          404,
+          "cartNotFound"
+        );
+      }
+
+      res.status(200).json(userOrders);
+    } catch (error) {
+      console.log(error);
+      throw new ApiError(
+        "Could not get cart orders",
+        400,
+        "getCartOrderFailed"
+      );
+    }
+  });
+
+  router.get("/user/orders", Session, async (req, res) => {
+    try {
+      const userOrders = await Cart.find({
+        buyer: req.user._id,
+        completed: true,
+      })
+        .populate("products.productId", "name price images categories")
+        .populate("products.seller", "SellerName");
+
+      res.status(200).json(userOrders);
+    } catch (error) {
+      console.log(error);
+      throw new ApiError("Could not get orders", 400, "getOrderFailed");
+    }
+  });
+
+  // router.get("/user/orders", Session, async (req, res) => {
+  //   const userId = req.user._id;
+  //   try {
+  //     // const cart = await Cart.find({ buyer: req.user._id, completed: true });
+  //     const paymentSuccess = await PaymentSuccess.find({
+  //       status: "success",
+  //     })
+  //       .select("price paymentId createdAt")
+  //       .populate({ path: "cartId", select: "buyer" });
+
+  //     // Giriş yapan kullanıcıya ait olan ödemeleri filtreliyoruz
+  //     const userPayments = paymentSuccess.filter((payment) => {
+  //       // Populate edilmiş cartId içerisinden buyer kontrolü yapıyoruz
+  //       return String(payment.cartId.buyer) === String(userId);
+  //     });
+
+  //     if (userPayments.length === 0) {
+  //       return res
+  //         .status(404)
+  //         .json({ message: "No payments found for this user" });
+  //     }
+
+  //     res.status(200).json({ userPayments });
+  //   } catch (error) {
+  //     console.log(error);
+  //     throw new ApiError("Could not get orders", 400, "getOrderFailed");
+  //   }
+  // });
 };
