@@ -12,129 +12,7 @@ import { CompletePayment } from "../utils/payments";
 import OrderCompleteMail from "../middlewares/OrderCompleteMail";
 
 export default (router) => {
-  //yeni bir kartla ödeme oluştur ve kartı kaydetme
-  // router.post(
-  //   "/payments/:cartId/with-new-card",
-  //   Session,
-  //   async (req, res, next) => {
-  //     const { card } = req.body;
-  //     if (!card) {
-  //       throw new ApiError("Card is required", 400, "cardRequired");
-  //     }
-  //     if (!req.params?.cartId) {
-  //       throw new ApiError("CartID is required", 400, "cartIdRequired");
-  //     }
-  //     const cart = await Carts.findOne({ _id: req.params?.cartId })
-  //       .populate("buyer")
-  //       .populate("products");
-  //     if (!cart) {
-  //       throw new ApiError("Card not found", 404, "cardNotFound");
-  //     }
-  //     if (cart?.completed) {
-  //       throw new ApiError("Cart is completed", 400, "cartCompleted");
-  //     }
-
-  //     card.registerCard = "0"; //methodslarda registerCard:1 yani kartı kaydet demek ama şuan kaydetme dediğim için 0 yaptım
-
-  //     const paidPrice = cart.products
-  //       .map((product) => product.price)
-  //       .reduce((a, b) => a + b, 0); //ödenecek miktarların toplamı
-
-  //     const data = {
-  //       locale: req.user.locale,
-  //       conversationId: id(),
-  //       price: paidPrice,
-  //       paidPrice: paidPrice,
-  //       currency: Iyzipay.CURRENCY.TRY,
-  //       installments: "1",
-  //       basketId: String(cart?._id),
-  //       paymentChannel: Iyzipay.PAYMENT_CHANNEL.WEB,
-  //       paymentGroup: Iyzipay.PAYMENT_GROUP.PRODUCT,
-  //       paymentCard: card,
-  //       buyer: {
-  //         id: String(req.user._id),
-  //         name: req.user?.name,
-  //         surname: req.user?.surname,
-  //         gsmNumber: req.user?.phoneNumber,
-  //         email: req.user?.email,
-  //         identityNumber: req.user?.identityNumber,
-  //         lastLoginDate: moment(req.user?.updatedAt).format(
-  //           "YYYY-MM-DD HH:mm:ss"
-  //         ), //iyizpay tarih formatına çevirmek için yapıldı
-  //         registrationDate: moment(req.user?.updatedAt).format(
-  //           "YYYY-MM-DD HH:mm:ss"
-  //         ),
-  //         registrationAddress: req.user?.address,
-  //         ip: req.user?.ip,
-  //         city: req.user?.city,
-  //         country: req.user?.country,
-  //         zipCode: req.user?.zipCode,
-  //       },
-  //       shippingAddress: {
-  //         contactName: req.user?.name + "" + req.user?.surname,
-  //         city: req.user?.city,
-  //         country: req.user?.country,
-  //         address: req.user?.address,
-  //         zipCode: req.user?.zipCode,
-  //       },
-  //       billingAddress: {
-  //         contactName: req.user?.name + "" + req.user?.surname,
-  //         city: req.user?.city,
-  //         country: req.user?.country,
-  //         address: req.user?.address,
-  //         zipCode: req.user?.zipCode,
-  //       },
-  //       basketItems: cart.products.map((product, index) => {
-  //         return {
-  //           id: String(product?._id),
-  //           name: product?.name,
-  //           category1: product.categories[0],
-  //           category2: product.categories[1],
-  //           itemType: Iyzipay.BASKET_ITEM_TYPE[product?.itemType],
-  //           price: product?.price,
-  //         };
-  //       }),
-  //     };
-
-  //     try {
-  //       let result = await Payments.createPayment(data);
-  //       await CompletePayment(result);
-  //       // Ürün stoklarını güncelleme
-  //       const productStockUpdates = {};
-
-  //       // Sepetteki ürünleri döngüyle işleyerek aynı ürünlerden kaç tane olduğunu hesapla
-  //       for (const cartProduct of cart.products) {
-  //         const productId = String(cartProduct._id);
-  //         if (productStockUpdates[productId]) {
-  //           productStockUpdates[productId]++;
-  //         } else {
-  //           productStockUpdates[productId] = 1;
-  //         }
-  //       }
-
-  //       // Stokları güncelle
-  //       for (const productId in productStockUpdates) {
-  //         const quantityToDecrease = productStockUpdates[productId];
-  //         await Products.updateOne(
-  //           { _id: productId },
-  //           { $inc: { stock: -quantityToDecrease } }
-  //         );
-  //       }
-  //       res.json(result);
-
-  //       next();
-  //     } catch (error) {
-  //       next(error);
-  //     }
-  //   },
-  //   OrderCompleteMail,
-  //   (req, res) => {
-  //     return res
-  //       .status(200)
-  //       .json(`${req.user.email} mail adresine sipariş detayı gönderilmiştir.`);
-  //   }
-  // ); //burada hata alıyordum bunu birdaha test et
-  router.post(
+  /*çalışıyor*/ router.post(
     "/payments/:cartId/with-new-card",
     Session,
     async (req, res, next) => {
@@ -145,30 +23,78 @@ export default (router) => {
       if (!req.params?.cartId) {
         throw new ApiError("CartID is required", 400, "cartIdRequired");
       }
-
       const cart = await Carts.findOne({ _id: req.params?.cartId })
         .populate("buyer")
         .populate("products");
-
       if (!cart) {
-        throw new ApiError("Cart not found", 404, "cartNotFound");
+        throw new ApiError("Card not found", 404, "cardNotFound");
       }
-
       if (cart?.completed) {
         throw new ApiError("Cart is completed", 400, "cartCompleted");
       }
 
       card.registerCard = "0"; //methodslarda registerCard:1 yani kartı kaydet demek ama şuan kaydetme dediğim için 0 yaptım
 
-      const paidPrice = cart.products
-        .map((product) => product.price)
-        .reduce((a, b) => a + b, 0); //ödenecek miktarların toplamı
+      // Ürün bilgilerini getirme (Cart'taki productId'leri kullanarak)
+      const productIds = cart.products.map((item) => item.productId);
+      const products = await Products.find({ _id: { $in: productIds } });
+
+      // Ürün bilgilerini cart'a ekliyoruz
+      const enrichedProducts = cart.products.map((cartProduct) => {
+        const productDetail = products.find(
+          (product) => String(product._id) === String(cartProduct.productId)
+        );
+        return {
+          ...cartProduct._doc,
+          productDetail,
+        };
+      });
+
+      // Ödenecek miktar hesaplama
+      // const paidPrice = enrichedProducts
+      //   .map((product) => product.productDetail.price * product.quantity)
+      //   .reduce((a, b) => a + b, 0);
+
+      const paidPrice = enrichedProducts
+        .reduce(
+          (acc, product) =>
+            acc + product.productDetail.price * product.quantity,
+          0
+        )
+        .toFixed(2);
+
+      const basketItems = enrichedProducts.map((cartProduct) => {
+        const product = cartProduct.productDetail;
+        return {
+          id: String(product?._id),
+          name: product?.name,
+          category1: product?.categories?.[0] || "Uncategorized",
+          category2: product?.categories?.[1] || "",
+          itemType: Iyzipay.BASKET_ITEM_TYPE[product?.itemType],
+          price: (product?.price * cartProduct.quantity).toFixed(2), // Birim fiyatı çarpıyoruz ve virgülden sonra 2 basamak tutuyoruz
+        };
+      });
+
+      // Sepetteki ürünlerin toplam fiyatını hesaplıyoruz
+      const basketTotal = basketItems
+        .reduce((acc, item) => acc + parseFloat(item.price), 0)
+        .toFixed(2); // Fiyatları alıp float'a çeviriyoruz
+
+      // Ödeme ve sepet toplamları kontrolü
+      if (basketTotal !== paidPrice) {
+        console.log(basketTotal);
+        throw new ApiError(
+          "Gönderilen tutar tüm kırılımların toplam tutarına eşit olmalıdır",
+          400,
+          "priceMismatch"
+        );
+      }
 
       const data = {
         locale: req.user.locale,
         conversationId: id(),
-        price: paidPrice,
-        paidPrice: paidPrice,
+        price: basketTotal, //toFixed(2) vardı
+        paidPrice: basketTotal,
         currency: Iyzipay.CURRENCY.TRY,
         installments: "1",
         basketId: String(cart?._id),
@@ -184,7 +110,7 @@ export default (router) => {
           identityNumber: req.user?.identityNumber,
           lastLoginDate: moment(req.user?.updatedAt).format(
             "YYYY-MM-DD HH:mm:ss"
-          ),
+          ), //iyizpay tarih formatına çevirmek için yapıldı
           registrationDate: moment(req.user?.updatedAt).format(
             "YYYY-MM-DD HH:mm:ss"
           ),
@@ -195,29 +121,20 @@ export default (router) => {
           zipCode: req.user?.zipCode,
         },
         shippingAddress: {
-          contactName: req.user?.name + " " + req.user?.surname,
+          contactName: req.user?.name + "" + req.user?.surname,
           city: req.user?.city,
           country: req.user?.country,
           address: req.user?.address,
           zipCode: req.user?.zipCode,
         },
         billingAddress: {
-          contactName: req.user?.name + " " + req.user?.surname,
+          contactName: req.user?.name + "" + req.user?.surname,
           city: req.user?.city,
           country: req.user?.country,
           address: req.user?.address,
           zipCode: req.user?.zipCode,
         },
-        basketItems: cart.products.map((product, index) => {
-          return {
-            id: String(product?._id),
-            name: product?.name,
-            category1: product?.categories?.[0] || "Uncategorized", // Eğer categories yoksa "Uncategorized" döner
-            category2: product?.categories?.[1] || "", // Eğer ikinci kategori yoksa boş string döner
-            itemType: Iyzipay.BASKET_ITEM_TYPE[product?.itemType],
-            price: product?.price,
-          };
-        }),
+        basketItems,
       };
 
       try {
@@ -229,11 +146,13 @@ export default (router) => {
 
         // Sepetteki ürünleri döngüyle işleyerek aynı ürünlerden kaç tane olduğunu hesapla
         for (const cartProduct of cart.products) {
-          const productId = String(cartProduct._id);
+          const productId = String(cartProduct.productId); // Doğru ürün ID'si buradan alınmalı
+          const quantity = cartProduct.quantity; // Sepetteki miktar
+
           if (productStockUpdates[productId]) {
-            productStockUpdates[productId]++;
+            productStockUpdates[productId] += quantity;
           } else {
-            productStockUpdates[productId] = 1;
+            productStockUpdates[productId] = quantity;
           }
         }
 
@@ -245,18 +164,12 @@ export default (router) => {
             { $inc: { stock: -quantityToDecrease } }
           );
         }
-        res.json(result);
 
-        next();
+        await OrderCompleteMail(req, res);
+        res.json(result);
       } catch (error) {
         next(error);
       }
-    },
-    OrderCompleteMail,
-    (req, res) => {
-      return res
-        .status(200)
-        .json(`${req.user.email} mail adresine sipariş detayı gönderilmiştir.`);
     }
   );
 
@@ -358,318 +271,11 @@ export default (router) => {
     }
   );
 
-  //hali hazırda bulunan kart ile ödeme
-  // router.post(
-  //   "/payments/:cartId/:cardIndex/with-registered-card-index",
-  //   Session,
-  //   async (req, res, next) => {
-  //     let { cardIndex } = req.params;
-  //     if (!cardIndex) {
-  //       throw new ApiError("Card index is required", 400, "cardIndexRequired");
-  //     }
-  //     if (!req.user?.cardUserKey) {
-  //       throw new ApiError(
-  //         "No registered card available",
-  //         400,
-  //         "cardUserKeyRequired"
-  //       );
-  //     }
-
-  //     const cards = await Cards.getUserCards({
-  //       locale: req.user.locale,
-  //       conversationId: id(),
-  //       cardUserKey: req.user?.cardUserKey,
-  //     });
-  //     const index = parseInt(cardIndex);
-  //     if (index >= cards?.cardDetails?.length) {
-  //       throw new ApiError("Card does not exist", 400, "cardIndexInvalid");
-  //     }
-  //     const { cardToken } = cards?.cardDetails[index];
-  //     if (!req.params?.cartId) {
-  //       throw new ApiError("CartID is required", 400, "cartIdRequired");
-  //     }
-  //     const cart = await Carts.findOne({ _id: req.params?.cartId })
-  //       .populate("buyer")
-  //       .populate("products");
-  //     if (!cart) {
-  //       throw new ApiError("Card not found", 404, "cardNotFound");
-  //     }
-  //     if (cart?.completed) {
-  //       throw new ApiError("Cart is completed", 400, "cartCompleted");
-  //     }
-
-  //     const paidPrice = cart.products
-  //       .map((product) => product.price)
-  //       .reduce((a, b) => a + b, 0); //ödenecek miktarların toplamı
-
-  //     const card = {
-  //       cardToken,
-  //       cardUserKey: req.user?.cardUserKey,
-  //     };
-
-  //     const data = {
-  //       locale: req.user.locale,
-  //       conversationId: id(),
-  //       price: paidPrice,
-  //       paidPrice: paidPrice,
-  //       currency: Iyzipay.CURRENCY.TRY,
-  //       installments: "1",
-  //       basketId: String(cart?._id),
-  //       paymentChannel: Iyzipay.PAYMENT_CHANNEL.WEB,
-  //       paymentGroup: Iyzipay.PAYMENT_GROUP.PRODUCT,
-  //       paymentCard: card,
-  //       buyer: {
-  //         id: String(req.user._id),
-  //         name: req.user?.name,
-  //         surname: req.user?.surname,
-  //         gsmNumber: req.user?.phoneNumber,
-  //         email: req.user?.email,
-  //         identityNumber: req.user?.identityNumber,
-  //         lastLoginDate: moment(req.user?.updatedAt).format(
-  //           "YYYY-MM-DD HH:mm:ss"
-  //         ), //iyizpay tarih formatına çevirmek için yapıldı
-  //         registrationDate: moment(req.user?.updatedAt).format(
-  //           "YYYY-MM-DD HH:mm:ss"
-  //         ),
-  //         registrationAddress: req.user?.address,
-  //         ip: req.user?.ip,
-  //         city: req.user?.city,
-  //         country: req.user?.country,
-  //         zipCode: req.user?.zipCode,
-  //       },
-  //       shippingAddress: {
-  //         contactName: req.user?.name + "" + req.user?.surname,
-  //         city: req.user?.city,
-  //         country: req.user?.country,
-  //         address: req.user?.address,
-  //         zipCode: req.user?.zipCode,
-  //       },
-  //       billingAddress: {
-  //         contactName: req.user?.name + "" + req.user?.surname,
-  //         city: req.user?.city,
-  //         country: req.user?.country,
-  //         address: req.user?.address,
-  //         zipCode: req.user?.zipCode,
-  //       },
-  //       basketItems: cart.products.map((product, index) => {
-  //         return {
-  //           id: String(product?._id),
-  //           name: product?.name,
-  //           category1: product.categories[0],
-  //           category2: product.categories[1],
-  //           itemType: Iyzipay.BASKET_ITEM_TYPE[product?.itemType],
-  //           price: product?.price,
-  //         };
-  //       }),
-  //     };
-
-  //     try {
-  //       let result = await Payments.createPayment(data);
-  //       await CompletePayment(result);
-
-  //       // Ürün stoklarını güncelleme
-  //       const productStockUpdates = {};
-
-  //       // Sepetteki ürünleri döngüyle işleyerek aynı ürünlerden kaç tane olduğunu hesapla
-  //       for (const cartProduct of cart.products) {
-  //         const productId = String(cartProduct._id);
-  //         if (productStockUpdates[productId]) {
-  //           productStockUpdates[productId]++;
-  //         } else {
-  //           productStockUpdates[productId] = 1;
-  //         }
-  //       }
-
-  //       // Stokları güncelle
-  //       for (const productId in productStockUpdates) {
-  //         const quantityToDecrease = productStockUpdates[productId];
-  //         await Products.updateOne(
-  //           { _id: productId },
-  //           { $inc: { stock: -quantityToDecrease } }
-  //         );
-  //       }
-  //       res.json(result);
-
-  //       next();
-  //     } catch (error) {
-  //       next(error);
-  //     }
-  //   },
-  //   OrderCompleteMail,
-  //   (req, res) => {
-  //     return res
-  //       .status(200)
-  //       .json(`${req.user.email} mail adresine sipariş detayı gönderilmiştir.`);
-  //   }
-  // );
-  //en son buydu
-  // router.post(
-  //   "/payments/:cartId/:cardIndex/with-registered-card-index",
-  //   Session,
-  //   async (req, res, next) => {
-  //     let { cardIndex } = req.params;
-  //     if (!cardIndex) {
-  //       throw new ApiError("Card index is required", 400, "cardIndexRequired");
-  //     }
-  //     if (!req.user?.cardUserKey) {
-  //       throw new ApiError(
-  //         "No registered card available",
-  //         400,
-  //         "cardUserKeyRequired"
-  //       );
-  //     }
-
-  //     const cards = await Cards.getUserCards({
-  //       locale: req.user.locale,
-  //       conversationId: id(),
-  //       cardUserKey: req.user?.cardUserKey,
-  //     });
-  //     const index = parseInt(cardIndex);
-  //     if (index >= cards?.cardDetails?.length) {
-  //       throw new ApiError("Card does not exist", 400, "cardIndexInvalid");
-  //     }
-  //     const { cardToken } = cards?.cardDetails[index];
-  //     if (!req.params?.cartId) {
-  //       throw new ApiError("CartID is required", 400, "cartIdRequired");
-  //     }
-
-  //     // Cart'ı bul
-  //     const cart = await Carts.findOne({ _id: req.params?.cartId }).populate(
-  //       "buyer"
-  //     ); // Sadece buyer'ı populate ediyoruz.
-
-  //     if (!cart) {
-  //       throw new ApiError("Cart not found", 404, "cartNotFound");
-  //     }
-  //     if (cart?.completed) {
-  //       throw new ApiError("Cart is completed", 400, "cartCompleted");
-  //     }
-
-  //     // Ürün bilgilerini getirme (Cart'taki productId'leri kullanarak)
-  //     const productIds = cart.products.map((item) => item.productId);
-  //     const products = await Products.find({ _id: { $in: productIds } });
-
-  //     // Ürün bilgilerini cart'a ekliyoruz
-  //     const enrichedProducts = cart.products.map((cartProduct) => {
-  //       const productDetail = products.find(
-  //         (product) => String(product._id) === String(cartProduct.productId)
-  //       );
-  //       return {
-  //         ...cartProduct._doc,
-  //         productDetail,
-  //       };
-  //     });
-
-  //     const paidPrice = enrichedProducts
-  //       .map((product) => product.productDetail.price * product.quantity)
-  //       .reduce((a, b) => a + b, 0); // Ödenecek miktarların toplamı
-
-  //     const card = {
-  //       cardToken,
-  //       cardUserKey: req.user?.cardUserKey,
-  //     };
-
-  //     const data = {
-  //       locale: req.user.locale,
-  //       conversationId: id(),
-  //       price: paidPrice,
-  //       paidPrice: paidPrice,
-  //       currency: Iyzipay.CURRENCY.TRY,
-  //       installments: "1",
-  //       basketId: String(cart?._id),
-  //       paymentChannel: Iyzipay.PAYMENT_CHANNEL.WEB,
-  //       paymentGroup: Iyzipay.PAYMENT_GROUP.PRODUCT,
-  //       paymentCard: card,
-  //       buyer: {
-  //         id: String(req.user._id),
-  //         name: req.user?.name,
-  //         surname: req.user?.surname,
-  //         gsmNumber: req.user?.phoneNumber,
-  //         email: req.user?.email,
-  //         identityNumber: req.user?.identityNumber,
-  //         lastLoginDate: moment(req.user?.updatedAt).format(
-  //           "YYYY-MM-DD HH:mm:ss"
-  //         ),
-  //         registrationDate: moment(req.user?.updatedAt).format(
-  //           "YYYY-MM-DD HH:mm:ss"
-  //         ),
-  //         registrationAddress: req.user?.address,
-  //         ip: req.user?.ip,
-  //         city: req.user?.city,
-  //         country: req.user?.country,
-  //         zipCode: req.user?.zipCode,
-  //       },
-  //       shippingAddress: {
-  //         contactName: req.user?.name + "" + req.user?.surname,
-  //         city: req.user?.city,
-  //         country: req.user?.country,
-  //         address: req.user?.address,
-  //         zipCode: req.user?.zipCode,
-  //       },
-  //       billingAddress: {
-  //         contactName: req.user?.name + "" + req.user?.surname,
-  //         city: req.user?.city,
-  //         country: req.user?.country,
-  //         address: req.user?.address,
-  //         zipCode: req.user?.zipCode,
-  //       },
-  //       basketItems: enrichedProducts.map((cartProduct, index) => {
-  //         const product = cartProduct.productDetail;
-  //         return {
-  //           id: String(product?._id),
-  //           name: product?.name,
-  //           category1: product?.categories?.[0] || "Uncategorized",
-  //           category2: product?.categories?.[1] || "",
-  //           itemType: Iyzipay.BASKET_ITEM_TYPE[product?.itemType],
-  //           price: product?.price,
-  //         };
-  //       }),
-  //     };
-
-  //     try {
-  //       let result = await Payments.createPayment(data);
-  //       await CompletePayment(result);
-
-  //       // Ürün stoklarını güncelleme
-  //       const productStockUpdates = {};
-
-  //       // Sepetteki ürünleri döngüyle işleyerek aynı ürünlerden kaç tane olduğunu hesapla
-  //       for (const cartProduct of cart.products) {
-  //         const productId = String(cartProduct._id);
-  //         if (productStockUpdates[productId]) {
-  //           productStockUpdates[productId]++;
-  //         } else {
-  //           productStockUpdates[productId] = 1;
-  //         }
-  //       }
-
-  //       // Stokları güncelle
-  //       for (const productId in productStockUpdates) {
-  //         const quantityToDecrease = productStockUpdates[productId];
-  //         await Products.updateOne(
-  //           { _id: productId },
-  //           { $inc: { stock: -quantityToDecrease } }
-  //         );
-  //       }
-
-  //       res.json(result);
-  //       next();
-  //     } catch (error) {
-  //       next(error);
-  //     }
-  //   },
-  //   OrderCompleteMail,
-  //   (req, res) => {
-  //     return res
-  //       .status(200)
-  //       .json(`${req.user.email} mail adresine sipariş detayı gönderilmiştir.`);
-  //   }
-  // );
-
-  router.post(
+  /*çalışıyor*/ router.post(
     "/payments/:cartId/:cardIndex/with-registered-card-index",
     Session,
     async (req, res, next) => {
+      //çalışıyor bu endpoint
       let { cardIndex } = req.params;
       if (!cardIndex) {
         throw new ApiError("Card index is required", 400, "cardIndexRequired");
@@ -725,8 +331,12 @@ export default (router) => {
 
       // Ödenecek miktar hesaplama
       const paidPrice = enrichedProducts
-        .map((product) => product.productDetail.price * product.quantity)
-        .reduce((a, b) => a + b, 0);
+        .reduce(
+          (acc, product) =>
+            acc + product.productDetail.price * product.quantity,
+          0
+        )
+        .toFixed(2);
 
       const basketItems = enrichedProducts.map((cartProduct) => {
         const product = cartProduct.productDetail;
@@ -742,8 +352,8 @@ export default (router) => {
 
       // Sepetteki ürünlerin toplam fiyatını hesaplıyoruz
       const basketTotal = basketItems
-        .map((item) => parseFloat(item.price)) // Fiyatları alıp float'a çeviriyoruz
-        .reduce((a, b) => a + b, 0);
+        .reduce((acc, item) => acc + parseFloat(item.price), 0)
+        .toFixed(2); // Fiyatları alıp float'a çeviriyoruz
 
       // Ödeme ve sepet toplamları kontrolü
       if (basketTotal !== paidPrice) {
@@ -758,8 +368,8 @@ export default (router) => {
       const data = {
         locale: req.user.locale,
         conversationId: id(),
-        price: basketTotal.toFixed(2), // İyzico için yuvarlanmış toplam sepet tutarı
-        paidPrice: basketTotal.toFixed(2), // Aynı değeri paidPrice'a da gönderiyoruz
+        price: basketTotal, // İyzico için yuvarlanmış toplam sepet tutarı
+        paidPrice: basketTotal, // Aynı değeri paidPrice'a da gönderiyoruz
         currency: Iyzipay.CURRENCY.TRY,
         installments: "1",
         basketId: String(cart?._id),
@@ -809,16 +419,17 @@ export default (router) => {
         let result = await Payments.createPayment(data);
         await CompletePayment(result);
 
-        // Ürün stoklarını güncelleme
         const productStockUpdates = {};
 
         // Sepetteki ürünleri döngüyle işleyerek aynı ürünlerden kaç tane olduğunu hesapla
         for (const cartProduct of cart.products) {
-          const productId = String(cartProduct.productId); // Düzeltme: _id yerine productId kullanılıyor
+          const productId = String(cartProduct.productId); // Doğru ürün ID'si buradan alınmalı
+          const quantity = cartProduct.quantity; // Sepetteki miktar
+
           if (productStockUpdates[productId]) {
-            productStockUpdates[productId] += cartProduct.quantity; // Her ürünün quantity'sini ekliyoruz
+            productStockUpdates[productId] += quantity;
           } else {
-            productStockUpdates[productId] = cartProduct.quantity;
+            productStockUpdates[productId] = quantity;
           }
         }
 

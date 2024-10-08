@@ -8,7 +8,7 @@ const { ObjectId } = Schema.Types;
 const ItemTransactionSchema = new Schema({
   uuid: {
     type: String,
-    default: uuid(), //hata alırsak tüm dblerdeki uuidlere bi bak
+    default: () => uuid(), //hata alırsak tüm dblerdeki uuidlere bi bak
     unique: true,
     required: true,
   },
@@ -29,13 +29,17 @@ const ItemTransactionSchema = new Schema({
     type: Number,
     required: true,
   },
+  quantity: {
+    type: Number,
+    required: false,
+  },
 });
 
 const PaymentsSuccessSchema = new Schema(
   {
     uuid: {
       type: String,
-      default: uuid,
+      default: () => uuid(),
       unique: true,
       required: true,
     },
