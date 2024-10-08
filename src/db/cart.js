@@ -9,7 +9,7 @@ const CartsSchema = new Schema(
   {
     uuid: {
       type: String,
-      default: uuid(),
+      default: () => uuid(),
       unique: true,
       required: true,
     },

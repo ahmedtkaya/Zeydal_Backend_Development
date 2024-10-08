@@ -156,6 +156,13 @@ export default (router) => {
         );
       }
 
+      if (cart.products.length === 0) {
+        await Cart.findByIdAndDelete(cartId);
+        return res
+          .status(200)
+          .json({ message: "Cart is empty and has been deleted" });
+      }
+
       // Sepeti kaydediyoruz
       await cart.save();
 

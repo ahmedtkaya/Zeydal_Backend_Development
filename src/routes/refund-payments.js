@@ -38,6 +38,7 @@ export default (router) => {
       const payment = await PaymentSuccess.findOne({
         "itemTransactions.paymentTransactionId": paymentTransactionId,
       });
+      //saat sınırı koy kısmi iptal için
 
       const currentItemTransaction = payment.itemTransactions.find(
         (itemTransaction, index) => {
