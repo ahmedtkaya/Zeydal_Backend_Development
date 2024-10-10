@@ -1,11 +1,15 @@
 import Seller from "../db/seller";
 import Users from "../db/users";
 import ApiError from "../errors/ApiError";
+import {
+  ApproveMailToSeller,
+  RejectMailToSeller,
+} from "../middlewares/ApproveMailToSeller";
 import Session from "../middlewares/Session";
 
 export default (router) => {
   // Onay bekleyen seller'ları listeleme
-  router.get("/seller/pending", Session, async (req, res) => {
+  router.get("/admin/seller/pending", Session, async (req, res) => {
     if (req.user.role !== "admin") {
       throw new ApiError(
         "Forbidden: Insufficient permissions",
@@ -27,9 +31,9 @@ export default (router) => {
     }
   });
 
-  router.put("/seller/verify/:id", Session, async (req, res, next) => {
+  router.put("/admin/seller/verify/:id", Session, async (req, res, next) => {
     const { id } = req.params;
-    const { action } = req.body;
+    const { action, response } = req.body;
     if (req.user.role !== "admin") {
       throw new ApiError(
         "Forbidden: Insufficient permissions",
@@ -40,18 +44,31 @@ export default (router) => {
     try {
       const seller = await Seller.findById(id);
 
+      if (seller.isVerified == true) {
+        throw new ApiError(
+          "This seller is already verified",
+          404,
+          "alreadyVerified"
+        );
+      }
+
       if (!seller) {
         throw new ApiError("No exist Seller", 404, "noExistSeller");
       }
       if (action === "approve") {
         seller.isVerified = true;
+
         await seller.save();
+
+        await ApproveMailToSeller(req, res, next);
+
         return res.status(200).json({ message: "Seller is verified", seller });
       } else if (action === "reject") {
+        await RejectMailToSeller(req, res, next);
+
         await Seller.findByIdAndDelete(id);
-        return res
-          .status(200)
-          .json({ message: "Seller is rejected and deleted" });
+
+        return res.status(200);
       } else {
         return res.status(400).send(new ApiError(400, "invalid transaction"));
       }

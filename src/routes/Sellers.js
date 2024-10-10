@@ -607,4 +607,22 @@ export default (router) => {
       res.status(200).send("Link has been send");
     }
   );
+
+  router.get("/seller/:id", Session, async (req, res) => {
+    const { id } = req.params;
+    try {
+      const sellerId = await Seller.findById(id);
+      if (!sellerId) {
+        throw new ApiError(
+          "There no exist seller by this id",
+          400,
+          "noExistSellerByThisId"
+        );
+      }
+      res.status(200).json(sellerId);
+    } catch (error) {
+      console.log(error);
+      res.status(400).json("Error");
+    }
+  });
 };
