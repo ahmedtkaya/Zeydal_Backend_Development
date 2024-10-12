@@ -10,6 +10,11 @@ import * as Cards from "../services/iyzico/methods/cards";
 import id from "../utils/uuid";
 import { CompletePayment } from "../utils/payments";
 import OrderCompleteMail from "../middlewares/OrderCompleteMail";
+import {
+  checkLotsOfRequiredField,
+  checkRequiredField,
+} from "../helpers/RequiredCheck";
+import { noExistVariable, notFoundVariable } from "../helpers/CheckExistence";
 
 export default (router) => {
   /*çalışıyor*/ router.post(
@@ -17,12 +22,14 @@ export default (router) => {
     Session,
     async (req, res, next) => {
       const { card } = req.body;
-      if (!card) {
-        throw new ApiError("Card is required", 400, "cardRequired");
-      }
-      if (!req.params?.cartId) {
-        throw new ApiError("CartID is required", 400, "cartIdRequired");
-      }
+      // if (!card) {
+      //   throw new ApiError("Card is required", 400, "cardRequired");
+      // }
+      checkRequiredField(card, "Card");
+      checkRequiredField(req.params?.cartId, "CartId");
+      // if (!req.params?.cartId) {
+      //   throw new ApiError("CartID is required", 400, "cartIdRequired");
+      // }
       const cart = await Carts.findOne({ _id: req.params?.cartId })
         .populate("buyer")
         .populate("products");

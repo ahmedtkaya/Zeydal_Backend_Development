@@ -2,6 +2,8 @@ import nodemailer from "nodemailer";
 import crypto from "crypto";
 import Users from "../db/users"; // Kullanıcı modelinizi buraya dahil edin
 import ApiError from "../errors/ApiError";
+import { notFoundVariable } from "../helpers/CheckExistence";
+import { checkRequiredField } from "../helpers/RequiredCheck";
 
 // Rastgele şifre üretme fonksiyonu
 const generateRandomPassword = (length = 12) => {
@@ -11,16 +13,12 @@ const generateRandomPassword = (length = 12) => {
 const forgotPasswordEmail = async (req, res, next) => {
   const { email } = req.body;
 
-  if (!email) {
-    return next(new ApiError(400, "E-posta adresi gereklidir."));
-  }
-
   try {
-    // Kullanıcıyı e-posta adresi ile bul
+    checkRequiredField(email, "Email");
+
     const user = await Users.findOne({ email });
-    if (!user) {
-      return next(new ApiError(404, "Kullanıcı bulunamadı."));
-    }
+
+    notFoundVariable(user, "User");
 
     // Rastgele bir şifre oluştur
     const newPassword = generateRandomPassword();
@@ -53,8 +51,8 @@ const forgotPasswordEmail = async (req, res, next) => {
       .status(200)
       .json({ message: "Yeni şifreniz e-posta adresinize gönderildi." });
   } catch (error) {
-    console.error("Şifre yenileme hatası:", error);
-    return next(new ApiError(500, "Yeni şifre e-postası gönderilemedi."));
+    console.log(error);
+    res.status(404).json(error);
   }
 };
 

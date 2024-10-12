@@ -6,6 +6,11 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import getUserIp from "../middlewares/getUserIP";
 import Session from "../middlewares/Session";
+import {
+  checkLotsOfRequiredField,
+  checkRequiredField,
+} from "../helpers/RequiredCheck";
+import { noExistVariable, notFoundVariable } from "../helpers/CheckExistence";
 import sendVerificationEmail from "../middlewares/VerificationEmail";
 import forgotPasswordEmail from "../middlewares/ForgotPasswordMail";
 
@@ -26,8 +31,19 @@ export default (router) => {
         zipCode,
       } = req.body;
 
-      if (!email) {
-        return res.status(400).send(new ApiError(400, "E-posta gereklidir"));
+      try {
+        checkLotsOfRequiredField([
+          { field: email, fieldName: "E-Mail" },
+          { field: name, fieldName: "Name" },
+          { field: surname, fieldName: "Surname" },
+          { field: phoneNumber, fieldName: "Phone Number" },
+          { field: address, fieldName: "Address" },
+          { field: city, fieldName: "City" },
+          { field: country, fieldName: "Country" },
+          { field: zipCode, fieldName: "Zip Code" },
+        ]);
+      } catch (error) {
+        return res.status(400).send(error);
       }
 
       const existingUser = await Users.findOne({ email });
@@ -75,16 +91,17 @@ export default (router) => {
   router.get("/verify-email/", async (req, res) => {
     const { token } = req.query;
 
-    if (!token) {
-      return res.status(400).send(new ApiError(400, "Token gereklidir"));
+    try {
+      checkRequiredField(token, "Token");
+    } catch (error) {
+      return res.status(400).json(error);
     }
 
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       const user = await Users.findById(decoded.id);
-      if (!user) {
-        return res.status(400).send(new ApiError(400, "Kullanıcı bulunamadı"));
-      }
+
+      notFoundVariable(user, "User");
 
       if (user.isVerified) {
         return res
@@ -108,17 +125,18 @@ export default (router) => {
     const { email, password } = req.body;
     const user = await Users.findOne({ email });
 
-    if (!email || !password) {
-      throw new ApiError(
-        "Email and Password is required",
-        401,
-        "requiredEmailAndPassword"
-      );
+    try {
+      checkLotsOfRequiredField([
+        { field: email, fieldName: "E-Mail" },
+        { field: password, fieldName: "Password" },
+      ]);
+    } catch (error) {
+      return res.status(400).json(error);
     }
 
     if (!user) {
       throw new ApiError(
-        "Incorrect Password or email2",
+        "Incorrect Password or email",
         401,
         "userOrPasswordIncorrect"
       );
@@ -174,10 +192,8 @@ export default (router) => {
         { phoneNumber, address, city },
         { new: true }
       );
+      notFoundVariable(updateUser, "User");
 
-      if (!updateUser) {
-        throw new ApiError("User not found", 400, "notFoundUser");
-      }
       return res
         .status(200)
         .json({ message: "user information has been changed", user });
@@ -251,12 +267,9 @@ export default (router) => {
 
   router.post("/forgot-password", forgotPasswordEmail, async (req, res) => {
     const { email } = req.body;
-
     const userEmail = await Users.findOne({ email });
-    if (!userEmail) {
-      console.log(userEmail);
-      throw new ApiError("This email does not exist", 400, "doesNotExistEmail");
-    }
+    noExistVariable(userEmail, "Email");
+
     res.status(200).send("Link has been send");
   });
 
