@@ -1,5 +1,6 @@
 import ApiError from "../errors/ApiError";
 import Session from "../middlewares/Session";
+import { checkRequiredField } from "../helpers/RequiredCheck";
 import * as RefundPayments from "../services/iyzico/methods/refund_payments";
 import id from "../utils/uuid";
 import Iyzipay from "iyzipay";
@@ -15,13 +16,14 @@ export default (router) => {
       const { paymentTransactionId } = req.params;
       const reasonObj = {};
       const { reason, description } = req.body;
-      if (!paymentTransactionId) {
-        throw new ApiError(
-          "PaymentTransactionId is required",
-          400,
-          "paymentTransactionRequired"
-        );
-      }
+      // if (!paymentTransactionId) {
+      //   throw new ApiError(
+      //     "PaymentTransactionId is required",
+      //     400,
+      //     "paymentTransactionRequired"
+      //   );
+      // }
+      checkRequiredField(paymentTransactionId, "PaymentTransactionId");
 
       if (reason && description) {
         if (!reasonEnum.includes(reason)) {

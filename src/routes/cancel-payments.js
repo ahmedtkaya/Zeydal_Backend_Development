@@ -4,9 +4,10 @@ import Session from "../middlewares/Session";
 import * as CancelPayments from "../services/iyzico/methods/cancel_payments";
 import id from "../utils/uuid";
 import PaymentSuccess from "../db/payment-success";
-import Cart from "../db/cart"; // Cart modelini ekledik
+import Cart from "../db/cart";
 import Products from "../db/products";
 import sendCanceledOrderMail from "../middlewares/OrderCanceledMail";
+import { checkRequiredField } from "../helpers/RequiredCheck";
 
 const { ObjectId } = Types;
 
@@ -21,13 +22,14 @@ export default (router) => {
       const paymentSuccessId = req.params.paymentSuccessId;
       const reasonObj = {};
 
-      if (!paymentSuccessId) {
-        throw new ApiError(
-          "Payment Success id is required",
-          400,
-          "paymentSuccessIdRequired"
-        );
-      }
+      // if (!paymentSuccessId) {
+      //   throw new ApiError(
+      //     "Payment Success id is required",
+      //     400,
+      //     "paymentSuccessIdRequired"
+      //   );
+      // }
+      checkRequiredField(paymentSuccessId, "PaymentSuccessId");
 
       if (reason && description) {
         if (!reasonEnum.includes(reason)) {

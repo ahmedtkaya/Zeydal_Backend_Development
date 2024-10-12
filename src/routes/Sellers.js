@@ -11,6 +11,11 @@ import getUserIp from "../middlewares/getUserIP";
 import Session from "../middlewares/Session";
 import sendVerificationEmail from "../middlewares/VerificationEmail";
 import forgotPasswordEmail from "../middlewares/ForgotPasswordMail";
+import {
+  checkLotsOfRequiredField,
+  checkRequiredField,
+} from "../helpers/RequiredCheck";
+import { noExistVariable } from "../helpers/CheckExistence";
 
 const upload = multer({
   storage: multer.diskStorage({
@@ -92,8 +97,16 @@ export default (router) => {
         city,
       } = req.body;
 
-      if (!SellerEmail) {
-        return res.status(400).send(new ApiError(400, "E-posta gereklidir"));
+      try {
+        checkLotsOfRequiredField([
+          { field: SellerEmail, fieldName: "E-Mail" },
+          { field: SellerName, fieldName: "Name" },
+          { field: phoneNumber, fieldName: "Phone Number" },
+          { field: address, fieldName: "Address" },
+          { field: city, fieldName: "City" },
+        ]);
+      } catch (error) {
+        return res.status(400).send(error);
       }
 
       const existingSeller = await Seller.findOne({ SellerEmail });
@@ -137,12 +150,13 @@ export default (router) => {
     const { SellerEmail, SellerPassword } = req.body;
     const seller = await Seller.findOne({ SellerEmail });
 
-    if (!SellerEmail || !SellerPassword) {
-      throw new ApiError(
-        "Email and Password is required",
-        401,
-        "requiredEmailAndPassword"
-      );
+    try {
+      checkLotsOfRequiredField([
+        { field: SellerEmail, fieldName: "E-Mail" },
+        { field: SellerPassword, fieldName: "Password" },
+      ]);
+    } catch (error) {
+      return res.status(400).json(error);
     }
 
     if (!seller) {
@@ -593,17 +607,11 @@ export default (router) => {
     "/seller/forgot-password",
     forgotPasswordEmail,
     async (req, res) => {
-      const { email } = req.body;
+      const { SellerEmail } = req.body;
 
-      const userEmail = await Users.findOne({ email });
-      if (!userEmail) {
-        console.log(userEmail);
-        throw new ApiError(
-          "This email does not exist",
-          400,
-          "doesNotExistEmail"
-        );
-      }
+      const userEmail = await Seller.findOne({ SellerEmail });
+
+      noExistVariable(userEmail, "Email");
       res.status(200).send("Link has been send");
     }
   );
@@ -612,13 +620,7 @@ export default (router) => {
     const { id } = req.params;
     try {
       const sellerId = await Seller.findById(id);
-      if (!sellerId) {
-        throw new ApiError(
-          "There no exist seller by this id",
-          400,
-          "noExistSellerByThisId"
-        );
-      }
+      noExistVariable(sellerId, "Seller");
       res.status(200).json(sellerId);
     } catch (error) {
       console.log(error);

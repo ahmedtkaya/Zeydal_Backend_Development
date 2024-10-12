@@ -1,5 +1,10 @@
 import ApiError from "../errors/ApiError";
 import Session from "../middlewares/Session";
+import {
+  checkPermissions,
+  checkProductOwnerShip,
+} from "../helpers/Permissions";
+import { noExistVariable, notFoundVariable } from "../helpers/CheckExistence";
 import Products from "../db/products";
 import multer from "multer";
 import path from "path";
@@ -43,14 +48,7 @@ export default (router) => {
     Session,
     upload.array("images", 10),
     async (req, res, next) => {
-      if (req.user.role !== "admin" && req.user.role !== "seller") {
-        //req.seller.role ?
-        throw new ApiError(
-          "Forbidden: Insufficient permissions",
-          403,
-          "InsufficientPermissions"
-        );
-      }
+      checkPermissions(req.user, ["admin", "seller"]);
       try {
         const { name, categories, definition, price, stock } = req.body;
         const imagePaths = req.files.map((file) => file.path);
@@ -160,17 +158,9 @@ export default (router) => {
     try {
       const sellerProduct = await Products.findById(id);
 
-      if (
-        req.user.role === "seller" &&
-        sellerProduct.seller.toString() !== req.user._id.toString()
-      ) {
-        throw new ApiError(
-          "Forbidden: You are not authorized to delete this product",
-          403,
-          "unauthorizedProductDelete"
-        );
-      }
       const product = await Products.findOneAndDelete({ _id: id });
+      checkProductOwnerShip(req.user, product);
+
       if (product) {
         res.status(200).json(`Product number ${id} was deleted`);
       } else {
@@ -216,13 +206,7 @@ export default (router) => {
     Session,
     upload.array("images", 10),
     async (req, res, next) => {
-      if (req.user.role !== "admin" && req.user.role !== "seller") {
-        throw new ApiError(
-          "Forbidden: Insufficient permissions",
-          403,
-          "InsufficientPermissions"
-        );
-      }
+      checkPermissions(req.user, ["admin", "seller"]);
       try {
         const productId = req.params.id;
         const { name, categories, brand, definition, price, stock } = req.body;
@@ -230,20 +214,9 @@ export default (router) => {
 
         const product = await Products.findById(productId);
 
-        if (!product) {
-          throw new ApiError("Product not found", 404, "ProductNotFound");
-        }
+        notFoundVariable(product, "Product");
 
-        if (
-          req.user.role === "seller" &&
-          product.seller.toString() !== req.user._id.toString()
-        ) {
-          throw new ApiError(
-            "Forbidden: You are not authorized to update this product",
-            403,
-            "unauthorizedProductUpdate"
-          );
-        }
+        checkProductOwnerShip(req.user, product);
 
         if (name) product.name = name;
         if (categories) product.categories = categories;
