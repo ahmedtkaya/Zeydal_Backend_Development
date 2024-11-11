@@ -1,21 +1,17 @@
-import Seller from "../db/seller";
-import Products from "../db/products";
 import Cart from "../db/cart";
+import Products from "../db/products";
+import Seller from "../db/seller";
 // import Users from "../db/users";
-import ApiError from "../errors/ApiError";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import multer from "multer";
 import path from "path";
-import getUserIp from "../middlewares/getUserIP";
-import Session from "../middlewares/Session";
-import sendVerificationEmail from "../middlewares/VerificationEmail";
-import forgotPasswordEmail from "../middlewares/ForgotPasswordMail";
-import {
-  checkLotsOfRequiredField,
-  checkRequiredField,
-} from "../helpers/RequiredCheck";
+import ApiError from "../errors/ApiError";
 import { noExistVariable } from "../helpers/CheckExistence";
+import { checkLotsOfRequiredField } from "../helpers/RequiredCheck";
+import forgotPasswordEmail from "../middlewares/ForgotPasswordMail";
+import Session from "../middlewares/Session";
+import getUserIp from "../middlewares/getUserIP";
 
 const upload = multer({
   storage: multer.diskStorage({
@@ -80,36 +76,42 @@ const getSellerOrders = async (seller) => {
 
 export default (router) => {
   router.post(
-    "/seller/register",
+    "/seller/register/private-company",
     getUserIp,
     upload.fields([
-      { name: "SellerLogo", maxCount: 1 }, // SellerLogo için 1 dosya
+      { name: "logo", maxCount: 1 }, // SellerLogo için 1 dosya
       { name: "documents", maxCount: 10 }, // Documents için en fazla 10 dosya
     ]),
     async (req, res, next) => {
       const {
-        SellerEmail,
-        SellerName,
-        SellerLogo,
-        phoneNumber,
-        SellerPassword,
+        email,
+        name,
+        logo,
+        gsmNumber,
+        password,
         address,
-        city,
+        identityNumber,
+        iban,
+        taxOffice,
+        legalCompanyTitle,
       } = req.body;
 
       try {
         checkLotsOfRequiredField([
-          { field: SellerEmail, fieldName: "E-Mail" },
-          { field: SellerName, fieldName: "Name" },
-          { field: phoneNumber, fieldName: "Phone Number" },
+          { field: email, fieldName: "E-Mail" },
+          { field: name, fieldName: "Name" },
+          { field: gsmNumber, fieldName: "Phone Number" },
           { field: address, fieldName: "Address" },
-          { field: city, fieldName: "City" },
+          { field: identityNumber, fieldName: "Identity Number" },
+          { field: iban, fieldName: "IBAN" },
+          { field: taxOffice, fieldName: "Tax Office" },
+          { field: legalCompanyTitle, fieldName: "Legal Company Title" },
         ]);
       } catch (error) {
         return res.status(400).send(error);
       }
 
-      const existingSeller = await Seller.findOne({ SellerEmail });
+      const existingSeller = await Seller.findOne({ email });
       if (existingSeller) {
         return res
           .status(400)
@@ -117,19 +119,93 @@ export default (router) => {
       }
 
       const seller = new Seller({
-        SellerEmail,
-        SellerName,
-        phoneNumber,
-        SellerPassword,
-        SellerLogo: req.files["SellerLogo"]
-          ? req.files["SellerLogo"][0].path
-          : undefined,
+        email,
+        name,
+        gsmNumber,
+        password,
+        logo: req.files["logo"] ? req.files["logo"][0].path : undefined,
         documents: req.files["documents"]
           ? req.files["documents"].map((file) => file.path)
           : [],
         address,
-        city,
-        ip: req.userIp,
+        identityNumber,
+        subMerchantType: "PRIVATE_COMPANY",
+        iban,
+        taxOffice,
+        legalCompanyTitle,
+      });
+
+      try {
+        await seller.save();
+        req.user = seller;
+        next();
+        res.status(200).json("Seller Oluşturuldu, onay bekleniyor.");
+      } catch (error) {
+        console.log(error);
+        return res
+          .status(500)
+          .send(new ApiError(500, "Kayıt işlemi sırasında hata oluştu"));
+      }
+    }
+  );
+  router.post(
+    "/seller/register/limited-or-joint",
+    getUserIp,
+    upload.fields([
+      { name: "logo", maxCount: 1 }, // SellerLogo için 1 dosya
+      { name: "documents", maxCount: 10 }, // Documents için en fazla 10 dosya
+    ]),
+    async (req, res, next) => {
+      const {
+        email,
+        name,
+        logo,
+        gsmNumber,
+        password,
+        address,
+        taxNumber,
+        iban,
+        taxOffice,
+        legalCompanyTitle,
+      } = req.body;
+
+      try {
+        checkLotsOfRequiredField([
+          { field: email, fieldName: "E-Mail" },
+          { field: name, fieldName: "Name" },
+          { field: gsmNumber, fieldName: "Phone Number" },
+          { field: address, fieldName: "Address" },
+          { field: taxNumber, fieldName: "Tax Number" },
+          { field: iban, fieldName: "IBAN" },
+          { field: taxOffice, fieldName: "Tax Office" },
+          { field: legalCompanyTitle, fieldName: "Legal Company Title" },
+        ]);
+      } catch (error) {
+        return res.status(400).send(error);
+      }
+
+      const existingSeller = await Seller.findOne({ email });
+      if (existingSeller) {
+        return res
+          .status(400)
+          .send(new ApiError(400, "Bu e-posta zaten kullanılıyor"));
+      }
+
+      const seller = new Seller({
+        email,
+        name,
+        gsmNumber,
+        password,
+        logo: req.files["logo"] ? req.files["logo"][0].path : undefined,
+        documents: req.files["documents"]
+          ? req.files["documents"].map((file) => file.path)
+          : [],
+        address,
+        taxNumber,
+        subMerchantType: "LIMITED_OR_JOINT_STOCK_COMPANY",
+        iban,
+        taxOffice,
+        legalCompanyTitle,
       });
 
       try {
@@ -147,13 +223,13 @@ export default (router) => {
   );
 
   router.post("/seller/login", async (req, res) => {
-    const { SellerEmail, SellerPassword } = req.body;
-    const seller = await Seller.findOne({ SellerEmail });
+    const { email, password } = req.body;
+    const seller = await Seller.findOne({ email });
 
     try {
       checkLotsOfRequiredField([
-        { field: SellerEmail, fieldName: "E-Mail" },
-        { field: SellerPassword, fieldName: "Password" },
+        { field: email, fieldName: "E-Mail" },
+        { field: password, fieldName: "Password" },
       ]);
     } catch (error) {
       return res.status(400).json(error);
@@ -173,10 +249,7 @@ export default (router) => {
         "accountNotVerified"
       );
     }
-    const passwordConfirmed = await bcrypt.compare(
-      SellerPassword,
-      seller.SellerPassword
-    );
+    const passwordConfirmed = await bcrypt.compare(password, seller.password);
     // console.log("kullanıcı girdisi:", password); silinecekler
     // console.log("hashlenmiş hali:", user.password);
 

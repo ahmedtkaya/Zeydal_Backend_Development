@@ -1,13 +1,13 @@
+import multer from "multer";
+import path from "path";
+import Products from "../db/products";
 import ApiError from "../errors/ApiError";
-import Session from "../middlewares/Session";
+import { notFoundVariable } from "../helpers/CheckExistence";
 import {
   checkPermissions,
   checkProductOwnerShip,
 } from "../helpers/Permissions";
-import { noExistVariable, notFoundVariable } from "../helpers/CheckExistence";
-import Products from "../db/products";
-import multer from "multer";
-import path from "path";
+import Session from "../middlewares/Session";
 
 const upload = multer({
   storage: multer.diskStorage({
