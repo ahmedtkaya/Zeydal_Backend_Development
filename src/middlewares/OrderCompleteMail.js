@@ -1,7 +1,7 @@
 import nodemailer from "nodemailer";
-import Users from "../db/users";
 import Carts from "../db/cart";
 import Products from "../db/products"; // Products modelini ekleyin
+import Users from "../db/users";
 import ApiError from "../errors/ApiError";
 
 const sendCompletedOrderEmail = async (req, res, next) => {
@@ -53,7 +53,7 @@ const sendCompletedOrderEmail = async (req, res, next) => {
           productDetail.name
         }</h4>
         <p style="margin: 5px 0; font-size: 14px; color: #666;">Marka: ${
-          productDetail.seller?.SellerName
+          productDetail.seller?.SellerName //name olacak
         }</p>
         <p style="margin: 5px 0; font-size: 14px; color: #666;">Adet: ${
           cartProduct.quantity
