@@ -18,7 +18,7 @@ const ApproveMailToSeller = async (req, res, next) => {
 
   const mailOptions = {
     from: process.env.MAIL_SENDER,
-    to: seller.SellerEmail,
+    to: seller.email,
     subject: "Hesabınız onaylandı",
     html: `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #f0f0f0; border-radius: 10px; background-color: #fafafa;">
@@ -27,7 +27,7 @@ const ApproveMailToSeller = async (req, res, next) => {
       </div>
       <div style="background-color: #ffffff; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);">
         <h2 style="color: #333333; text-align: center;">Tebrikler, Hesabınız Onaylandı!</h2>
-        <p style="font-size: 16px; color: #555555; text-align: center;">Merhaba <strong>${seller.SellerName}</strong>,</p>
+        <p style="font-size: 16px; color: #555555; text-align: center;">Merhaba <strong>${seller.name}</strong>,</p>
         <p style="font-size: 16px; color: #555555; text-align: center;">
           Hesabınız başarıyla onaylanmıştır ve artık platformumuzu kullanabilirsiniz.
         </p>
@@ -78,7 +78,7 @@ const RejectMailToSeller = async (req, res, next) => {
 
   const mailOptions = {
     from: process.env.MAIL_SENDER,
-    to: seller.SellerEmail,
+    to: seller.email,
     subject: "Hesabınız reddedildi",
     html: `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #f0f0f0; border-radius: 10px; background-color: #fafafa;">
@@ -87,7 +87,7 @@ const RejectMailToSeller = async (req, res, next) => {
       </div>
       <div style="background-color: #ffffff; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);">
         <h2 style="color: #333333; text-align: center;">Hesabınız Reddedildi</h2>
-        <p style="font-size: 16px; color: #555555; text-align: center;">Merhaba <strong>${seller.SellerName}</strong>,</p>
+        <p style="font-size: 16px; color: #555555; text-align: center;">Merhaba <strong>${seller.name}</strong>,</p>
         <p style="font-size: 16px; color: #555555; text-align: center;">Hesabınızın reddedildiğini üzülerek bildiriyoruz.</p>
         
         <div style="background-color: #f8d7da; color: #721c24; padding: 15px; margin: 20px 0; border-left: 5px solid #f5c6cb; border-radius: 5px;">

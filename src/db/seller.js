@@ -1,5 +1,5 @@
-import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
+import mongoose from "mongoose";
 import generatedId from "../utils/uuid";
 
 const Schema = mongoose.Schema;
@@ -10,17 +10,13 @@ const randomColorGenerator = () => {
 
 const SellerSchema = new Schema(
   {
-    uuid: {
-      type: String,
-      default: generatedId(),
-      unique: true,
-      required: true,
-    },
     locale: {
       type: String,
-      required: true,
       default: "tr",
-      enum: ["tr", "en"],
+    },
+    conversationId: {
+      type: String,
+      default: generatedId(),
     },
     role: {
       type: String,
@@ -28,21 +24,70 @@ const SellerSchema = new Schema(
       default: "seller",
       enum: ["user", "admin", "seller"],
     },
-    SellerName: {
+    subMerchantExternalId: {
+      type: String,
+      required: true,
+      default: generatedId(),
+    },
+    subMerchantType: {
+      type: String,
+      enum: ["PRIVATE_COMPANY", "LIMITED_OR_JOINT_STOCK_COMPANY"],
+      // default: "PRIVATE_COMPANY",
+      required: true,
+    },
+    currency: {
+      type: String,
+      default: "TRY",
+      enum: ["TRY", "USD", "EUR", "GBP", "RUB", "CHF", "NOK"],
+    },
+    identityNumber: {
+      type: String,
+      minlength: 11,
+      maxlength: 11,
+      required: function () {
+        return this.subMerchantType === "PRIVATE_COMPANY";
+      },
+      unique: true,
+    },
+    taxNumber: {
+      type: String,
+      required: function () {
+        return this.subMerchantType === "LIMITED_OR_JOINT_STOCK_COMPANY";
+      },
+      unique: true,
+    },
+    name: {
       type: String,
       required: true,
     },
-    SellerEmail: {
+    gsmNumber: {
+      type: String,
+      required: true,
+    },
+    email: {
+      type: String,
+      required: true,
+    },
+    password: {
+      type: String,
+      required: true,
+    },
+    taxOffice: {
+      type: String,
+      required: true,
+    },
+    legalCompanyTitle: {
+      type: String,
+      required: true,
+    },
+    iban: {
       type: String,
       required: true,
       unique: true,
+      minlength: 26,
+      maxlength: 26,
     },
-    phoneNumber: {
-      type: String,
-      required: true,
-      unique: true,
-    },
-    SellerPassword: {
+    address: {
       type: String,
       required: true,
     },
@@ -51,45 +96,25 @@ const SellerSchema = new Schema(
       default: randomColorGenerator(),
       required: true,
     },
-    SellerLogo: {
+    logo: {
       type: String,
       required: false,
-    },
-    documents: {
-      type: [String],
-      required: true,
     },
     products: {
       type: ObjectId,
       ref: "Products",
     },
-    address: {
-      //fatura ve sipariş adresi diye ikiye ayrılabilir
-      type: String,
+    documents: {
+      type: [String],
       required: true,
-    },
-    city: {
-      type: String,
-      required: true,
-    },
-    country: {
-      type: String,
-      required: true,
-      default: "Turkey",
-    },
-    zipCode: {
-      type: String,
-      required: true,
-      default: "00000",
-    },
-    ip: {
-      type: String,
-      required: true,
-      //default: "85.34.78.112", //cihazın ip'sini alır
     },
     isVerified: {
       type: Boolean,
       default: false,
+    },
+    subMerchantKey: {
+      type: String,
+      unique: true,
     },
   },
   {
@@ -111,9 +136,9 @@ const SellerSchema = new Schema(
 SellerSchema.pre("save", async function (next) {
   try {
     // this.password = await bcrypt.hash(this.password, 10);
-    if (this.isModified("SellerPassword")) {
+    if (this.isModified("password")) {
       //password incorrect hatasını böyle çözdük
-      this.SellerPassword = await bcrypt.hash(this.SellerPassword, 10);
+      this.password = await bcrypt.hash(this.password, 10);
     }
     return next();
   } catch (err) {
