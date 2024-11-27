@@ -1,8 +1,8 @@
-import ApiError from "../errors/ApiError";
 import mongoose from "mongoose";
-import Session from "../middlewares/Session";
-import Products from "../db/products";
 import Cart from "../db/cart";
+import Products from "../db/products";
+import ApiError from "../errors/ApiError";
+import Session from "../middlewares/Session";
 
 export default (router) => {
   // router.post("/carts", Session, async (req, res, next) => {
@@ -112,7 +112,7 @@ export default (router) => {
         completed: false,
       })
         .populate("products.productId", "name price images categories")
-        .populate("products.seller", "SellerName");
+        .populate("products.seller", "name subMerchantKey");
 
       if (!cart) {
         throw new ApiError("No active Cart found", 401, "cartNotFound");

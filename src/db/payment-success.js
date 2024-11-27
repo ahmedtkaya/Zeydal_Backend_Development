@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-import bcrypt from "bcryptjs";
 import uuid from "../utils/uuid";
 
 const Schema = mongoose.Schema;
@@ -32,6 +31,14 @@ const ItemTransactionSchema = new Schema({
   quantity: {
     type: Number,
     required: false,
+  },
+  isApprove: {
+    type: Boolean,
+    default: false,
+  },
+  isDisApprove: {
+    type: Boolean,
+    default: false,
   },
 });
 

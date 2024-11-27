@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-import bcrypt from "bcryptjs";
 import uuid from "../utils/uuid";
 
 const Schema = mongoose.Schema;
@@ -9,7 +8,7 @@ const PaymentsFailedSchema = new Schema(
   {
     uuid: {
       type: String,
-      default: uuid(),
+      default: () => uuid(),
       unique: true,
       required: true,
     },
