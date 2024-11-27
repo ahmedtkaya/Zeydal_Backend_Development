@@ -9,15 +9,19 @@ const ApproveMailToSeller = async (req, res, next) => {
     throw new ApiError("Seller not found", 404, "noExistSeller");
   }
   const transporter = nodemailer.createTransport({
-    service: "gmail",
+    host: "smtp.yandex.com",
+    port: 465,
+    secure: true,
     auth: {
       user: process.env.MAIL_SENDER,
       pass: process.env.MAIL_SENDER_PASSWORD,
     },
+    debug: true,
+    logger: true,
   });
 
   const mailOptions = {
-    from: process.env.MAIL_SENDER,
+    from: `"TURKOTREND" <${process.env.MAIL_SENDER}>`,
     to: seller.email,
     subject: "Hesabınız onaylandı",
     html: `
@@ -69,15 +73,19 @@ const RejectMailToSeller = async (req, res, next) => {
     throw new ApiError("Seller not found", 404, "noExistSeller");
   }
   const transporter = nodemailer.createTransport({
-    service: "gmail",
+    host: "smtp.yandex.com",
+    port: 465,
+    secure: true,
     auth: {
       user: process.env.MAIL_SENDER,
       pass: process.env.MAIL_SENDER_PASSWORD,
     },
+    debug: true,
+    logger: true,
   });
 
   const mailOptions = {
-    from: process.env.MAIL_SENDER,
+    from: `"TURKOTREND" <${process.env.MAIL_SENDER}>`,
     to: seller.email,
     subject: "Hesabınız reddedildi",
     html: `

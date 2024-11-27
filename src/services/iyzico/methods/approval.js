@@ -1,8 +1,8 @@
 import iyzipay from "../connection/iyzipay";
 
-export const createSubMerchant = (data) => {
+export const approvePayment = (data) => {
   return new Promise((resolve, reject) => {
-    iyzipay.subMerchant.create(data, (err, result) => {
+    iyzipay.approval.create(data, (err, result) => {
       if (err) {
         reject(err);
       } else {
@@ -12,9 +12,9 @@ export const createSubMerchant = (data) => {
   });
 };
 
-export const getSubMerchant = (data) => {
+export const disApprovePayment = (data) => {
   return new Promise((resolve, reject) => {
-    iyzipay.subMerchant.retrieve(data, (err, result) => {
+    iyzipay.disapproval.create(data, (err, result) => {
       if (err) {
         reject(err);
       } else {

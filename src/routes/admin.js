@@ -1,14 +1,25 @@
+import ApprovalOrders from "../db/approval-orders";
+import DisApprovalOrders from "../db/disapproval-orders";
+import PaymentSuccess from "../db/payment-success";
 import Seller from "../db/seller";
 import Users from "../db/users";
 import ApiError from "../errors/ApiError";
 import { noExistVariable, notFoundVariable } from "../helpers/CheckExistence";
 import { checkPermissions } from "../helpers/Permissions";
+import { checkRequiredField } from "../helpers/RequiredCheck";
 import {
   ApproveMailToSeller,
   RejectMailToSeller,
 } from "../middlewares/ApproveMailToSeller";
 import Session from "../middlewares/Session";
-import { createSubMerchant } from "../services/iyzico/methods/submerchant";
+import {
+  approvePayment,
+  disApprovePayment,
+} from "../services/iyzico/methods/approval";
+import {
+  createSubMerchant,
+  getSubMerchant,
+} from "../services/iyzico/methods/submerchant";
 
 export default (router) => {
   // Onay bekleyen seller'ları listeleme
@@ -152,14 +163,201 @@ export default (router) => {
   router.get("/admin/get-all-sellers", Session, async (req, res) => {
     checkPermissions(req.user, ["admin"]);
     try {
-      const sellers = await Seller.find().select("-SellerPassword");
-      res.status(200).json(sellers);
+      const sellers = await Seller.find().select("-password");
+      const sellersWithSubMerchants = await Promise.all(
+        sellers.map(async (seller) => {
+          try {
+            const subMerchant = await getSubMerchant({
+              locale: seller.locale || "tr",
+              conversationId: seller.conversationId,
+              subMerchantExternalId: seller.subMerchantExternalId,
+            });
+            return {
+              subMerchant,
+            };
+          } catch (error) {
+            console.error(
+              `SubMerchant data could not be retrieved for seller: ${seller._id}`,
+              error
+            );
+            return {
+              ...seller.toObject(),
+              subMerchant: null,
+            };
+          }
+        })
+      );
+
+      res.status(200).json({ sellers: sellersWithSubMerchants });
     } catch (error) {
       console.log(error);
       throw new ApiError(
         "There must be error while get all sellers",
         404,
         "errorGetAllSellers"
+      );
+    }
+  });
+  router.post("/admin/approve-order", Session, async (req, res) => {
+    const { paymentTransactionId } = req.body;
+    checkRequiredField(paymentTransactionId, "PaymentTransactionId");
+
+    const data = {
+      paymentTransactionId,
+    };
+
+    try {
+      const result = await approvePayment(data);
+      // Update isApprove field in payment-success collection
+      const updateResult = await PaymentSuccess.updateOne(
+        { "itemTransactions.paymentTransactionId": paymentTransactionId }, // Locate the document with the specified transaction ID
+        { $set: { "itemTransactions.$.isApprove": true } } // Set isApprove to true for the matching item
+      );
+
+      // Check if any document was modified
+      if (updateResult.modifiedCount === 0) {
+        throw new ApiError(
+          "No matching transaction found or it was already approved",
+          404,
+          "transactionNotFound"
+        );
+      }
+
+      const payment = await PaymentSuccess.findOne(
+        { "itemTransactions.paymentTransactionId": paymentTransactionId },
+        "itemTransactions cartId"
+      ).populate("itemTransactions.itemId", "name price");
+
+      const transaction = payment.itemTransactions.find(
+        (item) => item.paymentTransactionId === paymentTransactionId
+      );
+
+      if (!transaction) {
+        throw new ApiError("Transaction not found", 404, "transactionNotFound");
+      }
+
+      // Create an ApprovedOrder record for the transaction
+      const approvedOrderData = {
+        paymentTransactionId: transaction.paymentTransactionId,
+        itemId: transaction.itemId._id,
+        name: transaction.itemId.name,
+        price: transaction.itemId.price,
+        paidPrice: transaction.paidPrice,
+        cartId: payment.cartId,
+      };
+
+      // Save the approved order to ApprovedOrders collection
+      const approvedOrder = await ApprovalOrders.create(approvedOrderData);
+      res.status(200).json({ result, approvedOrder });
+    } catch (error) {
+      console.log(error);
+    }
+  });
+  router.post("/admin/disapprove-order", Session, async (req, res) => {
+    const { paymentTransactionId } = req.body;
+    checkRequiredField(paymentTransactionId, "PaymentTransactionId");
+
+    const data = {
+      paymentTransactionId,
+    };
+
+    try {
+      const result = await disApprovePayment(data);
+      // Update isApprove field in payment-success collection
+      const updateResult = await PaymentSuccess.updateOne(
+        { "itemTransactions.paymentTransactionId": paymentTransactionId }, // Locate the document with the specified transaction ID
+        {
+          $set: {
+            "itemTransactions.$.isDisApprove": true,
+            "itemTransactions.$.isApprove": false,
+          },
+        } // Set isApprove to true for the matching item
+      );
+
+      // Check if any document was modified
+      if (updateResult.modifiedCount === 0) {
+        throw new ApiError(
+          "No matching transaction found or it was already approved",
+          404,
+          "transactionNotFound"
+        );
+      }
+
+      const payment = await PaymentSuccess.findOne(
+        { "itemTransactions.paymentTransactionId": paymentTransactionId },
+        "itemTransactions cartId"
+      ).populate("itemTransactions.itemId", "name price");
+
+      const transaction = payment.itemTransactions.find(
+        (item) => item.paymentTransactionId === paymentTransactionId
+      );
+
+      if (!transaction) {
+        throw new ApiError("Transaction not found", 404, "transactionNotFound");
+      }
+
+      // Create an ApprovedOrder record for the transaction
+      const disApprovedOrderData = {
+        paymentTransactionId: transaction.paymentTransactionId,
+        itemId: transaction.itemId._id,
+        name: transaction.itemId.name,
+        price: transaction.itemId.price,
+        paidPrice: transaction.paidPrice,
+        cartId: payment.cartId,
+      };
+
+      // Save the approved order to ApprovedOrders collection
+      const disApprovedOrder = await DisApprovalOrders.create(
+        disApprovedOrderData
+      );
+      res.status(200).json({ result, disApprovedOrder });
+    } catch (error) {
+      console.log(error);
+    }
+  });
+  router.get("/admin/waiting-orders", Session, async (req, res, next) => {
+    try {
+      const payments = await PaymentSuccess.find(
+        {
+          status: "success",
+          itemTransactions: {
+            $elemMatch: { isApprove: false, isDisApprove: false },
+          },
+        },
+        "itemTransactions"
+      ).populate("itemTransactions.itemId", "name price"); // Populate name and price from the product collection
+
+      // Prepare an array of transaction details
+      const transactionDetails = payments.flatMap((payment) =>
+        payment.itemTransactions
+          .filter(
+            (transaction) => !transaction.isApprove && !transaction.isDisApprove
+          )
+          .map((transaction) => ({
+            paymentTransactionId: transaction.paymentTransactionId,
+            itemId: transaction.itemId._id, // The ObjectId of the item
+            name: transaction.itemId.name, // Populated name of the item
+            price: transaction.itemId.price, // Populated price of the item
+          }))
+      );
+      if (transactionDetails.length === 0) {
+        console.log("there is no order to approve");
+        throw new ApiError(
+          "There is no order to approve",
+          401,
+          "noOrderToApprove"
+        );
+      }
+
+      res.status(200).json({ transactionDetails });
+    } catch (error) {
+      console.log(error);
+      next(
+        new ApiError(
+          "Could not retrieve paymentTransactionIds",
+          500,
+          "fetchError"
+        )
       );
     }
   });

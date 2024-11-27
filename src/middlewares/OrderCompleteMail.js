@@ -79,16 +79,20 @@ const sendCompletedOrderEmail = async (req, res, next) => {
 
   // E-posta gönderimi için mail transporter oluşturuyoruz
   const transporter = nodemailer.createTransport({
-    service: "gmail",
+    host: "smtp.yandex.com",
+    port: 465,
+    secure: true,
     auth: {
       user: process.env.MAIL_SENDER,
       pass: process.env.MAIL_SENDER_PASSWORD,
     },
+    debug: true,
+    logger: true,
   });
 
   // Gönderilecek e-posta içeriğini hazırlıyoruz
   const mailOptions = {
-    from: process.env.MAIL_SENDER,
+    from: `"TURKOTREND" <${process.env.MAIL_SENDER}>`,
     to: email,
     subject: "Siparişiniz alındı",
     html: `
