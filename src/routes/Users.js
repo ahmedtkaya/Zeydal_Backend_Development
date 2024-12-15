@@ -1,18 +1,17 @@
-import Users from "../db/users";
-import Cart from "../db/cart";
-import PaymentSuccess from "../db/payment-success";
-import ApiError from "../errors/ApiError";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import getUserIp from "../middlewares/getUserIP";
-import Session from "../middlewares/Session";
+import Cart from "../db/cart";
+import Users from "../db/users";
+import ApiError from "../errors/ApiError";
+import { noExistVariable, notFoundVariable } from "../helpers/CheckExistence";
 import {
   checkLotsOfRequiredField,
   checkRequiredField,
 } from "../helpers/RequiredCheck";
-import { noExistVariable, notFoundVariable } from "../helpers/CheckExistence";
-import sendVerificationEmail from "../middlewares/VerificationEmail";
 import forgotPasswordEmail from "../middlewares/ForgotPasswordMail";
+import Session from "../middlewares/Session";
+import sendVerificationEmail from "../middlewares/VerificationEmail";
+import getUserIp from "../middlewares/getUserIP";
 
 export default (router) => {
   router.post(
@@ -24,6 +23,7 @@ export default (router) => {
         name,
         surname,
         phoneNumber,
+        identityNumber,
         password,
         address,
         city,
@@ -41,6 +41,7 @@ export default (router) => {
           { field: city, fieldName: "City" },
           { field: country, fieldName: "Country" },
           { field: zipCode, fieldName: "Zip Code" },
+          { field: identityNumber, fieldName: "İdentity Number" },
         ]);
       } catch (error) {
         return res.status(400).send(error);
@@ -58,6 +59,7 @@ export default (router) => {
         name,
         surname,
         phoneNumber,
+        identityNumber,
         password,
         address,
         city,

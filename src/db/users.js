@@ -1,5 +1,5 @@
-import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
+import mongoose from "mongoose";
 import generatedId from "../utils/uuid";
 
 const Schema = mongoose.Schema;
@@ -12,7 +12,7 @@ const UserSchema = new Schema(
   {
     uuid: {
       type: String,
-      default: generatedId(),
+      default: () => generatedId(),
       unique: true,
       required: true,
     },
@@ -48,8 +48,10 @@ const UserSchema = new Schema(
     },
     identityNumber: {
       type: String,
+      minlength: 11,
+      maxlength: 11,
       required: true,
-      default: "00000000000",
+      // default: "00000000000",
     },
     password: {
       type: String,
@@ -111,9 +113,11 @@ const UserSchema = new Schema(
 
 UserSchema.pre("save", async function (next) {
   try {
-    // this.password = await bcrypt.hash(this.password, 10);
+    if (!this.phoneNumber.startsWith("+90")) {
+      this.phoneNumber = `+90${this.phoneNumber}`;
+    }
+
     if (this.isModified("password")) {
-      //password incorrect hatasını böyle çözdük
       this.password = await bcrypt.hash(this.password, 10);
     }
     return next();
