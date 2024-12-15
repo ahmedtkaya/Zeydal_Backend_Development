@@ -58,6 +58,17 @@ export default (router) => {
         throw new ApiError("Product not found", 404, "ProductNotFound");
       }
 
+      if (product.stock <= 0) {
+        throw new ApiError("Product is out of", 404, "OutOfStock");
+      }
+      if (product.stock < (quantity || 1)) {
+        throw new ApiError(
+          `Only ${product.stock} units of the product are available in stock`,
+          400,
+          "InsufficientStock"
+        );
+      }
+
       // Kullanıcının mevcut bir sepeti var mı kontrol et (Tamamlanmamış bir sepet)
       let cart = await Cart.findOne({
         buyer: req.user._id,
@@ -78,8 +89,21 @@ export default (router) => {
       );
 
       if (existingProductIndex > -1) {
+        // // Eğer ürün zaten sepetteyse, miktarı artır
+        // cart.products[existingProductIndex].quantity += quantity || 1;
         // Eğer ürün zaten sepetteyse, miktarı artır
-        cart.products[existingProductIndex].quantity += quantity || 1;
+        const newQuantity =
+          cart.products[existingProductIndex].quantity + (quantity || 1);
+
+        if (newQuantity > product.stock) {
+          throw new ApiError(
+            `Cannot add more than ${product.stock} units of the product to the cart`,
+            400,
+            "ExceedsStock"
+          );
+        }
+
+        cart.products[existingProductIndex].quantity = newQuantity;
       } else {
         // Ürün sepette yoksa yeni ürün olarak ekle
         cart.products.push({
