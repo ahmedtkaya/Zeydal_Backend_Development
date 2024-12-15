@@ -327,11 +327,18 @@ export default (router) => {
         "itemTransactions"
       ).populate("itemTransactions.itemId", "name price"); // Populate name and price from the product collection
 
+      console.log("Populated Payments:", payments);
+
       // Prepare an array of transaction details
       const transactionDetails = payments.flatMap((payment) =>
         payment.itemTransactions
           .filter(
-            (transaction) => !transaction.isApprove && !transaction.isDisApprove
+            (transaction) =>
+              !transaction.isApprove &&
+              !transaction.isDisApprove &&
+              transaction.itemId && // itemId mevcut mu?
+              transaction.itemId.name && // name alanı var mı?
+              transaction.itemId.price // price alanı var mı?
           )
           .map((transaction) => ({
             paymentTransactionId: transaction.paymentTransactionId,
