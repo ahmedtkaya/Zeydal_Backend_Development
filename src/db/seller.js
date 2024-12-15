@@ -7,7 +7,30 @@ const { ObjectId } = Schema.Types;
 const randomColorGenerator = () => {
   return Math.floor(Math.random() * 16777215).toString(16);
 };
+// const DocumentsEnum = [
+//   "vergi_levhasi",
+//   "isletme_kayit_belgesi",
+//   "sicil_gazetesi",
+//   "diger",
+// ];
 
+const DocumentSchema = new Schema(
+  {
+    sicil_gazetesi: {
+      type: String,
+      required: true,
+    },
+    vergi_levhasi: {
+      type: String,
+      required: true,
+    },
+    uploadedAt: {
+      type: Date,
+      default: Date.now,
+    },
+  },
+  { _id: false }
+);
 const SellerSchema = new Schema(
   {
     locale: {
@@ -62,6 +85,8 @@ const SellerSchema = new Schema(
     },
     gsmNumber: {
       type: String,
+      minlength: 10,
+      maxlength: 10,
       required: true,
     },
     email: {
@@ -84,8 +109,8 @@ const SellerSchema = new Schema(
       type: String,
       required: true,
       unique: true,
-      minlength: 26,
-      maxlength: 26,
+      minlength: 24,
+      maxlength: 24,
     },
     address: {
       type: String,
@@ -105,7 +130,7 @@ const SellerSchema = new Schema(
       ref: "Products",
     },
     documents: {
-      type: [String],
+      type: [DocumentSchema],
       required: true,
     },
     isVerified: {
@@ -135,6 +160,10 @@ const SellerSchema = new Schema(
 
 SellerSchema.pre("save", async function (next) {
   try {
+    if (!this.gsmNumber.startsWith("+90") && !this.iban.startsWith("TR")) {
+      this.iban = `TR${this.iban}`;
+      this.gsmNumber = `+90${this.gsmNumber}`;
+    }
     // this.password = await bcrypt.hash(this.password, 10);
     if (this.isModified("password")) {
       //password incorrect hatasını böyle çözdük

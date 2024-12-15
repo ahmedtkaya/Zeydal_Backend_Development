@@ -46,42 +46,17 @@ const upload = multer({
   },
 });
 
-const getSellerOrders = async (seller) => {
-  // Satıcının sahip olduğu ürünleri buluyoruz
-  const products = await Products.find({ seller: seller }).select("_id");
-  const productIds = products.map((product) => product._id);
-
-  // Satıcının ürünlerinin olduğu tamamlanmış sepetleri buluyoruz
-  const carts = await Cart.find({
-    "items.productId": { $in: productIds }, // Sepetteki ürünler arasında satıcının ürünleri olanları seçiyoruz
-    completed: true, // Tamamlanmış sepetleri filtreliyoruz
-  });
-
-  // Şimdi sadece bu satıcıya ait olan ürünleri filtreleyeceğiz
-  const sellerOrders = carts.map((cart) => {
-    // Sadece bu satıcının ürünlerini filtreliyoruz
-    const sellerItems = cart.products.filter((item) =>
-      productIds.includes(item.productId.toString())
-    );
-
-    return {
-      cartId: cart._id,
-      userId: cart.userId,
-      products: sellerItems, // Sadece satıcının ürünleri
-    };
-  });
-
-  return sellerOrders.filter((order) => order.items.length > 0); // Sadece satıcının ürünü olan siparişleri döndür
-};
+const uploadFields = [
+  { name: "logo", maxCount: 1 }, // SellerLogo için 1 dosya
+  { name: "vergi_levhasi", maxCount: 1 },
+  { name: "sicil_gazetesi", maxCount: 1 },
+];
 
 export default (router) => {
   router.post(
     "/seller/register/private-company",
     getUserIp,
-    upload.fields([
-      { name: "logo", maxCount: 1 }, // SellerLogo için 1 dosya
-      { name: "documents", maxCount: 10 }, // Documents için en fazla 10 dosya
-    ]),
+    upload.fields(uploadFields),
     async (req, res, next) => {
       const {
         email,
@@ -107,6 +82,12 @@ export default (router) => {
           { field: taxOffice, fieldName: "Tax Office" },
           { field: legalCompanyTitle, fieldName: "Legal Company Title" },
         ]);
+
+        if (!req.files["vergi_levhasi"] || !req.files["sicil_gazetesi"]) {
+          return res
+            .status(400)
+            .json({ error: "Vergi levhası ve Sicil gazetesi zorunludur." });
+        }
       } catch (error) {
         return res.status(400).send(error);
       }
@@ -118,15 +99,21 @@ export default (router) => {
           .send(new ApiError(400, "Bu e-posta zaten kullanılıyor"));
       }
 
+      const documents = [
+        {
+          vergi_levhasi: req.files["vergi_levhasi"][0].path,
+          sicil_gazetesi: req.files["sicil_gazetesi"][0].path,
+          uploadedAt: new Date(),
+        },
+      ];
+
       const seller = new Seller({
         email,
         name,
         gsmNumber,
         password,
         logo: req.files["logo"] ? req.files["logo"][0].path : undefined,
-        documents: req.files["documents"]
-          ? req.files["documents"].map((file) => file.path)
-          : [],
+        documents,
         address,
         identityNumber,
         subMerchantType: "PRIVATE_COMPANY",
@@ -151,10 +138,7 @@ export default (router) => {
   router.post(
     "/seller/register/limited-or-joint",
     getUserIp,
-    upload.fields([
-      { name: "logo", maxCount: 1 }, // SellerLogo için 1 dosya
-      { name: "documents", maxCount: 10 }, // Documents için en fazla 10 dosya
-    ]),
+    upload.fields(uploadFields),
     async (req, res, next) => {
       const {
         email,
@@ -180,6 +164,12 @@ export default (router) => {
           { field: taxOffice, fieldName: "Tax Office" },
           { field: legalCompanyTitle, fieldName: "Legal Company Title" },
         ]);
+
+        if (!req.files["vergi_levhasi"] || !req.files["sicil_gazetesi"]) {
+          return res
+            .status(400)
+            .json({ error: "Vergi levhası ve Sicil gazetesi zorunludur." });
+        }
       } catch (error) {
         return res.status(400).send(error);
       }
@@ -191,15 +181,21 @@ export default (router) => {
           .send(new ApiError(400, "Bu e-posta zaten kullanılıyor"));
       }
 
+      const documents = [
+        {
+          vergi_levhasi: req.files["vergi_levhasi"][0].path,
+          sicil_gazetesi: req.files["sicil_gazetesi"][0].path,
+          uploadedAt: new Date(),
+        },
+      ];
+
       const seller = new Seller({
         email,
         name,
         gsmNumber,
         password,
         logo: req.files["logo"] ? req.files["logo"][0].path : undefined,
-        documents: req.files["documents"]
-          ? req.files["documents"].map((file) => file.path)
-          : [],
+        documents,
         address,
         taxNumber,
         subMerchantType: "LIMITED_OR_JOINT_STOCK_COMPANY",
