@@ -338,13 +338,13 @@ export default (router) => {
               !transaction.isDisApprove &&
               transaction.itemId && // itemId mevcut mu?
               transaction.itemId.name && // name alanı var mı?
-              transaction.itemId.price // price alanı var mı?
+              transaction.price // price alanı var mı?
           )
           .map((transaction) => ({
             paymentTransactionId: transaction.paymentTransactionId,
             itemId: transaction.itemId._id, // The ObjectId of the item
             name: transaction.itemId.name, // Populated name of the item
-            price: transaction.itemId.price, // Populated price of the item
+            price: transaction.price, // Populated price of the item
           }))
       );
       if (transactionDetails.length === 0) {
