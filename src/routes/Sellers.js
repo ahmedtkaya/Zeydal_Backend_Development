@@ -9,7 +9,7 @@ import path from "path";
 import ApiError from "../errors/ApiError";
 import { noExistVariable } from "../helpers/CheckExistence";
 import { checkLotsOfRequiredField } from "../helpers/RequiredCheck";
-import forgotPasswordEmail from "../middlewares/ForgotPasswordMail";
+import { forgotSellerPasswordEmail } from "../middlewares/ForgotPasswordMail";
 import Session from "../middlewares/Session";
 import getUserIp from "../middlewares/getUserIP";
 
@@ -625,7 +625,7 @@ export default (router) => {
 
       const isMatchPassword = await bcrypt.compare(
         oldPassword,
-        existingSeller.SellerPassword
+        existingSeller.password
       );
       if (!isMatchPassword) {
         throw new ApiError(
@@ -645,7 +645,7 @@ export default (router) => {
 
       const isSamePassword = await bcrypt.compare(
         newPassword,
-        existingSeller.SellerPassword
+        existingSeller.password
       );
       if (isSamePassword) {
         throw new ApiError(
@@ -655,7 +655,7 @@ export default (router) => {
         );
       }
 
-      existingSeller.SellerPassword = newPassword;
+      existingSeller.password = newPassword;
       await existingSeller.save();
       console.log("Old Password (unhashed):", oldPassword);
       console.log("New Password (unhashed):", newPassword);
@@ -674,11 +674,11 @@ export default (router) => {
 
   router.post(
     "/seller/forgot-password",
-    forgotPasswordEmail,
+    forgotSellerPasswordEmail,
     async (req, res) => {
-      const { SellerEmail } = req.body;
+      const { email } = req.body;
 
-      const userEmail = await Seller.findOne({ SellerEmail });
+      const userEmail = await Seller.findOne({ email });
 
       noExistVariable(userEmail, "Email");
       res.status(200).send("Link has been send");

@@ -18,11 +18,11 @@ const DocumentSchema = new Schema(
   {
     sicil_gazetesi: {
       type: String,
-      required: true,
+      // required: true,
     },
     vergi_levhasi: {
       type: String,
-      required: true,
+      // required: true,
     },
     uploadedAt: {
       type: Date,
@@ -43,20 +43,20 @@ const SellerSchema = new Schema(
     },
     role: {
       type: String,
-      required: true,
+      // required: true,
       default: "seller",
       enum: ["user", "admin", "seller"],
     },
     subMerchantExternalId: {
       type: String,
-      required: true,
+      // required: true,
       default: generatedId(),
     },
     subMerchantType: {
       type: String,
       enum: ["PRIVATE_COMPANY", "LIMITED_OR_JOINT_STOCK_COMPANY"],
       // default: "PRIVATE_COMPANY",
-      required: true,
+      // required: true,
     },
     currency: {
       type: String,
@@ -65,8 +65,8 @@ const SellerSchema = new Schema(
     },
     identityNumber: {
       type: String,
-      minlength: 11,
-      maxlength: 11,
+      // minlength: 11,
+      // maxlength: 11,
       required: function () {
         return this.subMerchantType === "PRIVATE_COMPANY";
       },
@@ -81,49 +81,49 @@ const SellerSchema = new Schema(
     },
     name: {
       type: String,
-      required: true,
+      // required: true,
     },
     gsmNumber: {
       type: String,
-      minlength: 10,
-      maxlength: 10,
-      required: true,
+      // minlength: 12,
+      // maxlength: 12,
+      // required: true,
     },
     email: {
       type: String,
-      required: true,
+      // required: true,
     },
     password: {
       type: String,
-      required: true,
+      // required: true,
     },
     taxOffice: {
       type: String,
-      required: true,
+      // required: true,
     },
     legalCompanyTitle: {
       type: String,
-      required: true,
+      // required: true,
     },
     iban: {
       type: String,
-      required: true,
+      // required: true,
       unique: true,
-      minlength: 24,
-      maxlength: 24,
+      // minlength: 26,
+      // maxlength: 26,
     },
     address: {
       type: String,
-      required: true,
+      // required: true,
     },
     avatarColor: {
       type: String,
       default: randomColorGenerator(),
-      required: true,
+      // required: true,
     },
     logo: {
       type: String,
-      required: false,
+      // required: false,
     },
     products: {
       type: ObjectId,
@@ -131,7 +131,7 @@ const SellerSchema = new Schema(
     },
     documents: {
       type: [DocumentSchema],
-      required: true,
+      // required: true,
     },
     isVerified: {
       type: Boolean,
