@@ -8,7 +8,7 @@ import {
   checkLotsOfRequiredField,
   checkRequiredField,
 } from "../helpers/RequiredCheck";
-import forgotPasswordEmail from "../middlewares/ForgotPasswordMail";
+import { forgotPasswordEmail } from "../middlewares/ForgotPasswordMail";
 import Session from "../middlewares/Session";
 import sendVerificationEmail from "../middlewares/VerificationEmail";
 import getUserIp from "../middlewares/getUserIP";
