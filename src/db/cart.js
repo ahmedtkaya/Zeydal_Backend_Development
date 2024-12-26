@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-import bcrypt from "bcryptjs";
 import uuid from "../utils/uuid";
 
 const Schema = mongoose.Schema;
@@ -41,7 +40,7 @@ const CartsSchema = new Schema(
         },
         status: {
           type: String,
-          enum: ["pending", "processing", "completed"], // Ürün durumları
+          enum: ["pending", "processing", "completed", "canceled"], // Ürün durumları
           default: "pending",
         },
       },

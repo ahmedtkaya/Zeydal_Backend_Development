@@ -1,13 +1,13 @@
 import { Types } from "mongoose";
+import Cart from "../db/cart";
+import PaymentSuccess from "../db/payment-success";
+import Products from "../db/products";
 import ApiError from "../errors/ApiError";
+import { checkRequiredField } from "../helpers/RequiredCheck";
+import sendCanceledOrderMail from "../middlewares/OrderCanceledMail";
 import Session from "../middlewares/Session";
 import * as CancelPayments from "../services/iyzico/methods/cancel_payments";
 import id from "../utils/uuid";
-import PaymentSuccess from "../db/payment-success";
-import Cart from "../db/cart";
-import Products from "../db/products";
-import sendCanceledOrderMail from "../middlewares/OrderCanceledMail";
-import { checkRequiredField } from "../helpers/RequiredCheck";
 
 const { ObjectId } = Types;
 
@@ -62,13 +62,13 @@ export default (router) => {
         const timeDifference = now - paymentDate;
 
         // 24 saat sınırı kontrolü
-        if (timeDifference > 86400000) {
-          throw new ApiError(
-            "This payment can no longer be canceled as the 24-hour window has passed",
-            400,
-            "cancelTimeExceeded"
-          );
-        }
+        // if (timeDifference > 86400000) {
+        //   throw new ApiError(
+        //     "This payment can no longer be canceled as the 24-hour window has passed",
+        //     400,
+        //     "cancelTimeExceeded"
+        //   );
+        // }
 
         // Ödemeyi iptal et
         const result = await CancelPayments.cancelPayment({
@@ -90,6 +90,7 @@ export default (router) => {
         // Sepetteki ürünleri işle ve quantity miktarlarını al
         for (const cartProduct of cart.products) {
           const productId = String(cartProduct.productId); // Ürün ID'si
+          console.log("Processing Product ID: ", productId);
           const quantity = cartProduct.quantity; // Sepetteki miktar
 
           // Eğer quantity tanımlı değilse bu ürünü atla
@@ -104,6 +105,11 @@ export default (router) => {
           } else {
             productStockUpdates[productId] = quantity;
           }
+          await Cart.updateOne(
+            //carttaki status değişir
+            { _id: cart._id, "products.productId": productId },
+            { $set: { "products.$.status": "canceled" } }
+          );
         }
 
         // Ürün stoklarını güncelle
