@@ -23,3 +23,27 @@ export const getSubMerchant = (data) => {
     });
   });
 };
+
+export const updatePrivateSubMerchant = (data) => {
+  return new Promise((resolve, reject) => {
+    iyzipay.subMerchant.update(data, (err, result) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(result);
+      }
+    });
+  });
+};
+
+export const updateLimitedOrJointSubMerchant = (data) => {
+  return new Promise((resolve, reject) => {
+    iyzipay.subMerchant.update(data, (err, result) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(result);
+      }
+    });
+  });
+};

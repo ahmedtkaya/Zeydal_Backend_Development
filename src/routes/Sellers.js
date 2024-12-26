@@ -8,6 +8,7 @@ import multer from "multer";
 import path from "path";
 import ApiError from "../errors/ApiError";
 import { noExistVariable } from "../helpers/CheckExistence";
+import { checkPermissions } from "../helpers/Permissions";
 import { checkLotsOfRequiredField } from "../helpers/RequiredCheck";
 import { forgotSellerPasswordEmail } from "../middlewares/ForgotPasswordMail";
 import Session from "../middlewares/Session";
@@ -285,15 +286,16 @@ export default (router) => {
   router.put(
     "/seller/update",
     Session,
-    upload.single("SellerLogo"),
+    upload.single("logo"),
     async (req, res) => {
-      const { phoneNumber, address, city } = req.body;
+      const { name, gsmNumber, iban, address } = req.body;
       const seller = req.user;
-      const logoPath = req.file ? `/uploads/${req.file.filename}` : null;
 
       try {
-        if (phoneNumber) {
-          const existingSeller = await Seller.findOne({ phoneNumber });
+        const logoPath = req.file ? `/uploads/${req.file.filename}` : null;
+
+        if (gsmNumber) {
+          const existingSeller = await Seller.findOne({ gsmNumber });
           if (
             existingSeller &&
             existingSeller._id.toString() !== seller._id.toString()
@@ -307,11 +309,13 @@ export default (router) => {
         }
         // Güncellenecek alanları dinamik olarak oluştur
         const updateFields = {
-          ...(phoneNumber && { phoneNumber }),
+          ...(name && { name }),
+          ...(gsmNumber && { gsmNumber }),
           ...(address && { address }),
-          ...(city && { city }),
-          ...(logoPath && { SellerLogo: logoPath }), // Eğer logo yüklendiyse ekle
+          ...(iban && { iban }),
+          ...(logoPath && { logo: logoPath }), // Eğer logo yüklendiyse ekle
         };
+        console.log(logoPath);
 
         // Satıcıyı güncelle
         const updateSeller = await Seller.findByIdAndUpdate(
@@ -346,6 +350,7 @@ export default (router) => {
   router.get("/seller-orders/pending", Session, async (req, res) => {
     try {
       const sellerId = req.user._id; // Satıcı ID'si
+      checkPermissions(req.user, ["seller"]);
 
       // 1. Satıcının ürünleri olan sepetleri ve ürünleri çekiyoruz
       const carts = await Cart.find({
@@ -406,6 +411,7 @@ export default (router) => {
   router.get("/seller-orders/processing", Session, async (req, res) => {
     try {
       const sellerId = req.user._id; // Satıcı ID'si
+      checkPermissions(req.user, ["seller"]);
 
       // 1. Satıcının ürünleri olan sepetleri ve ürünleri çekiyoruz
       const carts = await Cart.find({
@@ -466,6 +472,7 @@ export default (router) => {
   router.get("/seller-orders/completed", Session, async (req, res) => {
     try {
       const sellerId = req.user._id; // Satıcı ID'si
+      checkPermissions(req.user, ["seller"]);
 
       // 1. Satıcının ürünleri olan sepetleri ve ürünleri çekiyoruz
       const carts = await Cart.find({
@@ -517,6 +524,67 @@ export default (router) => {
         .json(sellerOrders.filter((order) => order.items.length > 0));
     } catch (error) {
       console.error("Error while getting seller orders:", error);
+      res.status(500).json({
+        message: "Can not get seller orders",
+        errorCode: "canNotGetSellerOrders",
+      });
+    }
+  });
+  router.get("/seller-orders/canceled", Session, async (req, res) => {
+    try {
+      const sellerId = req.user._id; // Satıcı ID'si
+      checkPermissions(req.user, ["seller"]);
+
+      // 1. Satıcının ürünleri olan sepetleri ve ürünleri çekiyoruz
+      const carts = await Cart.find({
+        "products.seller": sellerId, // Satıcının ürünü olanlar
+        "products.status": "canceled", // Beklemede olanlar
+        completed: true,
+      })
+        .populate(
+          "buyer",
+          "name surname email address phoneNumber zipCode city country"
+        )
+        .populate("products.productId"); // Alıcı bilgilerini getiriyoruz
+
+      // 2. Sadece satıcının ürünlerini filtreliyoruz
+      const sellerOrders = carts.map((cart) => {
+        const sellerItems = cart.products.filter((product) => {
+          return (
+            product.seller.toString() === sellerId.toString() &&
+            product.status === "canceled"
+          );
+        });
+
+        return {
+          cartId: cart._id,
+          buyer: cart.buyer,
+          items: sellerItems
+            .map((item) => {
+              if (!item.productId) {
+                // Eğer productId null ise, ürünü atlıyoruz
+                return null;
+              }
+
+              return {
+                productId: item.productId._id,
+                productName: item.productId.name,
+                productPrice: item.productId.price,
+                productImages: item.productId.images,
+                quantity: item.quantity,
+                status: item.status,
+              };
+            })
+            .filter((item) => item !== null), // Null olan ürünleri filtreliyoruz
+        };
+      });
+
+      // Eğer satıcıya ait ürünler varsa döndürüyoruz
+      res
+        .status(200)
+        .json(sellerOrders.filter((order) => order.items.length > 0));
+    } catch (error) {
+      console.log(error);
       res.status(500).json({
         message: "Can not get seller orders",
         errorCode: "canNotGetSellerOrders",
