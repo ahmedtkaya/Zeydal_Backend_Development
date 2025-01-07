@@ -13,6 +13,7 @@ import { checkLotsOfRequiredField } from "../helpers/RequiredCheck";
 import { forgotSellerPasswordEmail } from "../middlewares/ForgotPasswordMail";
 import Session from "../middlewares/Session";
 import getUserIp from "../middlewares/getUserIP";
+import { updateSellerInDatabase } from "../repositories/seller_repository";
 
 const upload = multer({
   storage: multer.diskStorage({
@@ -293,59 +294,101 @@ export default (router) => {
 
       try {
         const logoPath = req.file ? `/uploads/${req.file.filename}` : null;
+        const { updateSeller, iyzicoResponse } = await updateSellerInDatabase({
+          seller,
+          name,
+          gsmNumber,
+          iban,
+          address,
+          logoPath,
+        });
 
-        if (gsmNumber) {
-          const existingSeller = await Seller.findOne({ gsmNumber });
-          if (
-            existingSeller &&
-            existingSeller._id.toString() !== seller._id.toString()
-          ) {
-            throw new ApiError(
-              "This phone number already using",
-              400,
-              "phoneNumberAlreadyUsing"
-            );
-          }
-        }
-        // Güncellenecek alanları dinamik olarak oluştur
-        const updateFields = {
-          ...(name && { name }),
-          ...(gsmNumber && { gsmNumber }),
-          ...(address && { address }),
-          ...(iban && { iban }),
-          ...(logoPath && { logo: logoPath }), // Eğer logo yüklendiyse ekle
-        };
-        console.log(logoPath);
+        // if (!updateSeller || iyzicoResponse.status !== "success") {
+        //   throw new ApiError(
+        //     "Seller information update failed",
+        //     400,
+        //     "updateFailed"
+        //   );
+        // }
 
-        // Satıcıyı güncelle
-        const updateSeller = await Seller.findByIdAndUpdate(
-          seller._id,
-          updateFields,
-          { new: true }
-        );
-
-        // const updateSeller = await Seller.findByIdAndUpdate(
-        //   seller,
-        //   { phoneNumber, address, city },
-        //   { new: true }
-        // );
-
-        if (!updateSeller) {
-          throw new ApiError("Seller not found", 400, "notFoundSeller");
-        }
-        return res
-          .status(200)
-          .json({ message: "seller information has been changed", seller });
+        return res.status(200).json({
+          seller: updateSeller,
+          iyzicoResponse,
+        });
       } catch (error) {
-        console.log(error);
-        throw new ApiError(
-          "Seller informations cannot change",
-          500,
-          "cannotChangeSellerInformation"
-        );
+        console.error(error);
+        const errorMessage =
+          error.response && error.response.data
+            ? error.response.data.errorMessage
+            : "Seller information could not be updated";
+        throw new ApiError(errorMessage, 500, "updateFailed");
       }
     }
   );
+
+  // router.put(
+  //   "/seller/update",
+  //   Session,
+  //   upload.single("logo"),
+  //   async (req, res) => {
+  //     const { name, gsmNumber, iban, address } = req.body;
+  //     const seller = req.user;
+
+  //     try {
+  //       const logoPath = req.file ? `/uploads/${req.file.filename}` : null;
+
+  //       if (gsmNumber) {
+  //         const existingSeller = await Seller.findOne({ gsmNumber });
+  //         if (
+  //           existingSeller &&
+  //           existingSeller._id.toString() !== seller._id.toString()
+  //         ) {
+  //           throw new ApiError(
+  //             "This phone number already using",
+  //             400,
+  //             "phoneNumberAlreadyUsing"
+  //           );
+  //         }
+  //       }
+  //       // Güncellenecek alanları dinamik olarak oluştur
+  //       const updateFields = {
+  //         ...(name && { name }),
+  //         ...(gsmNumber && { gsmNumber }),
+  //         ...(address && { address }),
+  //         ...(iban && { iban }),
+  //         ...(logoPath && { logo: logoPath }), // Eğer logo yüklendiyse ekle
+  //       };
+  //       console.log(logoPath);
+
+  //       // Satıcıyı güncelle
+  //       const updateSeller = await Seller.findByIdAndUpdate(
+  //         seller._id,
+  //         updateFields,
+  //         { new: true }
+  //       );
+
+  //       // const updateSeller = await Seller.findByIdAndUpdate(
+  //       //   seller,
+  //       //   { phoneNumber, address, city },
+  //       //   { new: true }
+  //       // );
+
+  //       if (!updateSeller) {
+  //         throw new ApiError("Seller not found", 400, "notFoundSeller");
+  //       }
+  //       return res
+  //         .status(200)
+  //         .json({ message: "seller information has been changed", seller });
+  //     } catch (error) {
+  //       console.log(error);
+  //       throw new ApiError(
+  //         "Seller informations cannot change",
+  //         500,
+  //         "cannotChangeSellerInformation"
+  //       );
+  //     }
+  //   }
+  // );
 
   router.get("/seller-orders/pending", Session, async (req, res) => {
     try {
